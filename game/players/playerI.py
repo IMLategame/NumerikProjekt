@@ -10,5 +10,5 @@ class PlayerI:
         self.playerID = ID
 
     def getMove(self, phase, board: Board):
-        assert phase in ["set", "move", "end"]
+        assert phase in ["set", "move", "jump", "take"]
         raise NotImplementedError()
