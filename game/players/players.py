@@ -18,6 +18,9 @@ class PlayerI:
         assert phase in ["set", "move", "jump", "take"]
         raise NotImplementedError()
 
+    def win(self):
+        print("Player {}: I won :)".format(self.playerID))
+
 
 def parse_point(string):
     r, x, y = [int(s) for s in re.findall(r'\d+', string)]
