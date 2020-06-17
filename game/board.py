@@ -3,14 +3,13 @@ from game.moves import Move
 class Board:
     def __init__(self, noP=(0, 0), p0=(1, 0), p1=(0, 1)):
         # possible states:
-        self.empty = (0, 0)
         self.player_map = {-1: noP, 0: p0, 1: p1}
         self.string_rep = {noP: "_", p0: "x", p1: "o"}
 
         # board is a matrix 3x3x3 of (0,0). Non in unnecessary matrix entries.
         # Access by self.board_state[ring][x][y] or self[ring, x, y] with inner ring = 0, middle ring = 1, outer ring = 2.
-        self.board_state = [[[None if x == 1 and y == 1 else self.empty for y in range(3)] for x in range(3)] for ring
-                            in range(3)]
+        self.board_state = [[[None if x == 1 and y == 1 else self.player_map[-1] for y in range(3)]
+                             for x in range(3)] for ring in range(3)]
 
     def get_empty_pos(self):
         return self.get_player_pos(-1)
@@ -124,3 +123,43 @@ class Board:
                     if start_x != end_x or start_y != end_y:
                         return False
         return True
+
+    def do(self, move: Move, player):
+        if move.type == "set":
+            self[move.end] = self.player_map[player]
+            return
+        if move.type == "take":
+            self[move.end] = self.player_map[-1]
+            return
+        if move.type == "move":
+            self[move.start] = self.player_map[-1]
+            self[move.end] = self.player_map[player]
+
+    def get_mulls(self, player):
+        mulls = []
+        pieces = self.get_player_pos(player)
+        for i in range(len(pieces)-2):
+            for j in range(i+1, len(pieces)-1):
+                for k in range(j+1, len(pieces)):
+                    p1 = pieces[i]
+                    p2 = pieces[j]
+                    p3 = pieces[k]
+                    # same ring
+                    if p1[0] == p2[0] and p1[0] == p3[0]:
+                        #same x
+                        if p1[1] == p2[1] and p1[1] == p3[1]:
+                            mulls.append((p1, p2, p3))
+                        # same y
+                        elif p1[2] == p2[2] and p1[2] == p3[2]:
+                            mulls.append((p1, p2, p3))
+                    # different ring, but same x and y
+                    elif p1[1] == p2[1] and p1[1] == p3[1] and p1[2] == p2[2] and p1[2] == p3[2]:
+                        mulls.append((p1, p2, p3))
+        return mulls
+
+    def in_mull(self, player, point):
+        mulls = self.get_mulls(player)
+        for mull in mulls:
+            if point in mull:
+                return True
+        return False
