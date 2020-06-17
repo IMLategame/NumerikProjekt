@@ -27,6 +27,18 @@ class Board:
                         pos.append((r, x, y))
         return pos
 
+    def __setitem__(self, key, value):
+        r, x, y = key
+        possible = [0, 1, 2]
+        assert x in possible
+        assert y in possible
+        assert r in possible
+        assert x != 1 or y != 1
+        if value in ["a", "b", "no"]:
+            value = {"a": 0, "b": 1, "no": -1}[value]
+        assert value in [0, 1, -1]
+        self.board_state[r][x][y] = self.player_map[value]
+
     def __getitem__(self, item):
         r, x, y = item
         possible = [0, 1, 2]
