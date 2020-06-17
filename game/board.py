@@ -84,6 +84,15 @@ class Board:
     def is_legal(self, move: Move, phase, player):
         assert phase in ["set", "move", "jump", "take"]
         assert player in [0, 1]
+        assert move.end.x in [0, 1, 2]
+        assert move.end.y in [0, 1, 2]
+        assert move.end.r in [0, 1, 2]
+        assert move.end.x != 1 or move.end.y != 1
+        if move.type == "move":
+            assert move.start.r in [0, 1, 2]
+            assert move.start.x in [0, 1, 2]
+            assert move.start.y in [0, 1, 2]
+            assert move.start.x != 1 or move.start.y != 1
         enemy = 1 - player
         if phase == "set" and move.type != "set":
             return False
