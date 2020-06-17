@@ -21,10 +21,10 @@ class Board:
         pos = []
         for x in range(3):
             for y in range(3):
-                if x == 2 and y == 2:
+                if x == 1 and y == 1:
                     continue
                 for r in range(3):
-                    if self.board_state[r, x, y] == self.player_map[player]:
+                    if self[r, x, y] == self.player_map[player]:
                         pos.append((r, x, y))
         return pos
 
@@ -83,15 +83,15 @@ class Board:
     def is_legal(self, move: Move, phase, player):
         assert phase in ["set", "move", "jump", "take"]
         assert player in [0, 1]
-        assert move.end.x in [0, 1, 2]
-        assert move.end.y in [0, 1, 2]
-        assert move.end.r in [0, 1, 2]
-        assert move.end.x != 1 or move.end.y != 1
+        assert move.end[1] in [0, 1, 2]
+        assert move.end[2] in [0, 1, 2]
+        assert move.end[0] in [0, 1, 2]
+        assert move.end[1] != 1 or move.end[2] != 1
         if move.type == "move":
-            assert move.start.r in [0, 1, 2]
-            assert move.start.x in [0, 1, 2]
-            assert move.start.y in [0, 1, 2]
-            assert move.start.x != 1 or move.start.y != 1
+            assert move.start[0] in [0, 1, 2]
+            assert move.start[1] in [0, 1, 2]
+            assert move.start[2] in [0, 1, 2]
+            assert move.start[1] != 1 or move.start[2] != 1
         enemy = 1 - player
         if phase == "set" and move.type != "set":
             return False
@@ -126,14 +126,14 @@ class Board:
 
     def do(self, move: Move, player):
         if move.type == "set":
-            self[move.end] = self.player_map[player]
+            self[move.end] = player
             return
         if move.type == "take":
-            self[move.end] = self.player_map[-1]
+            self[move.end] = -1
             return
         if move.type == "move":
-            self[move.start] = self.player_map[-1]
-            self[move.end] = self.player_map[player]
+            self[move.start] = -1
+            self[move.end] = player
 
     def get_mulls(self, player):
         mulls = []

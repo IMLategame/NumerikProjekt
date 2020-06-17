@@ -29,10 +29,10 @@ def parse_point(string):
 
 class CmdPlayer(PlayerI):
     def __init__(self, playerID=0):
-        super(self, CmdPlayer).__init__(playerID)
+        super().__init__(playerID)
 
     def getMove(self, phase, board: Board):
-        print("Its your turn. You are player {} \n The phase is {}".format(board.string_rep[self.playerID], phase))
+        print("Its your turn. You are player {} \n The phase is {}".format(board.string_rep[board.player_map[self.playerID]], phase))
         print(board)
         while True:
             print("Whats your move? Possibilities are 'mv <start>; <end>', 'st <point>' or 'tk <point>'.")
