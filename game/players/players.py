@@ -23,6 +23,8 @@ class PlayerI:
 
 
 def parse_point(string):
+    print("point stuff:")
+    print([int(s) for s in re.findall(r'\d+', string)])
     r, x, y = [int(s) for s in re.findall(r'\d+', string)]
     return r, x, y
 
@@ -40,7 +42,7 @@ class CmdPlayer(PlayerI):
             if move_string[:2] not in ["mv", "st", "tk"]:
                 continue
             if move_string[:2] == "mv":
-                points = move_string[2:].split("; ")
+                points = move_string[2:].split(";")
                 start_p = parse_point(points[0])
                 end_p = parse_point(points[1])
                 move = Move("move", end_p, start_p)

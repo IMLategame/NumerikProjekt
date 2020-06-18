@@ -63,7 +63,7 @@ class Board:
                  "\n\t|  {}------{}------{}  |" \
                  "\n\t|         |         |" \
                  "\n\t{}---------{}---------{}".format(self.string_rep[self[2, 0, 0]], self.string_rep[self[2, 1, 0]],
-                                                       self.string_rep[self[1, 2, 0]],
+                                                       self.string_rep[self[2, 2, 0]],
                                                        self.string_rep[self[1, 0, 0]], self.string_rep[self[1, 1, 0]],
                                                        self.string_rep[self[1, 2, 0]],
                                                        self.string_rep[self[0, 0, 0]], self.string_rep[self[0, 1, 0]],
@@ -113,14 +113,16 @@ class Board:
 
                 #move in ring
                 if start_r == end_r:
-                    if abs(start_x-end_x) + abs(start_y-end_y) > 1:
+                    if abs(start_x-end_x) + abs(start_y-end_y) != 1:
                         return False
 
                 # move between rings
-                elif abs(start_r - end_r) > 1:
+                elif abs(start_r - end_r) != 1:
                     return False
                 else:
                     if start_x != end_x or start_y != end_y:
+                        return False
+                    if start_x != 1 and start_y != 1:
                         return False
         return True
 
