@@ -4,7 +4,7 @@ Programmierprojekt zu Numerische Methoden für algorithmische Systeme und neuron
 ## Projekt: Mühle
 
 #### Game:
-To run the game run:
+To run the game execute
 ```
 python3 game
 ```

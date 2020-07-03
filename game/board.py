@@ -38,7 +38,7 @@ class Board:
         self.player_map = {-1: noP, 0: p0, 1: p1}
         self.string_rep = {noP: "_", p0: "x", p1: "o"}
 
-        # board is a matrix 3x3x3 of (0,0). Non in unnecessary matrix entries.
+        # board is a matrix 3x3x3 of (0,0). 'None' in unnecessary matrix entries.
         # Board b -> b[r,x,y]
         # Access by self.board_state[ring][x][y] or self[ring, x, y] with inner ring = 0, middle ring = 1, outer ring = 2.
         # This is just the beginning board state
@@ -153,7 +153,7 @@ class Board:
             if move.end not in self.get_player_pos(enemy):
                 return False
         else:
-            # Its a move of set move.
+            # Its a move of type set or move.
             # Therefore the endpoint has to be an empty position.
             if move.end not in self.get_empty_pos():
                 return False
