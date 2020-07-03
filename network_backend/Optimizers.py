@@ -49,6 +49,7 @@ class Adam(OptimizerI):
         self.v = None
 
     def take_step(self):
+        # take care: when dealing with np arrays '*' and '/' are pointwise operations. '@' is the matrix multiplication
         gradients = self.net.getGradients()
         if self.m is None:
             # initialize with zeros
