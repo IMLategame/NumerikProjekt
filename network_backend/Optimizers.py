@@ -62,7 +62,6 @@ class Adam(OptimizerI):
         m_bias_corrected = [1/(1 - self.beta_1)*m_i for m_i in self.m]
         v_bias_corrected = [1/(1 - self.beta_2)*v_i for v_i in self.v]
 
-        # TODO: test this line
         delta = [self.alpha * m_i / (np.sqrt(v_i)+self.eps) for m_i, v_i in zip(m_bias_corrected, v_bias_corrected)]
 
         self.net.update(delta)
