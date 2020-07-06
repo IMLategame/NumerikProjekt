@@ -4,6 +4,28 @@ class ModuleI:
     def __init__(self):
         self.mode_train = True
 
+    # for nicer syntax
+    def __call__(self, x):
+        return self.feed_forward(x)
+
+    # for nicer syntax
+    def __len__(self):
+        return self.noFeatures()
+
+    # for nicer syntax
+    def __str__(self):
+        return self.toString()
+
+    # for nicer syntax
+    def __repr__(self):
+        return self.toString()
+
+    # for nicer syntax
+    def __getitem__(self, item):
+        assert item >= 0
+        assert item < len(self)
+        return self.getGradients()[item]
+
     # x.shape(batch_size, ...)
     def feed_forward(self, x):
         raise NotImplementedError()
@@ -35,3 +57,4 @@ class ModuleI:
 
     def fromString(self, string):
         raise NotImplementedError()
+
