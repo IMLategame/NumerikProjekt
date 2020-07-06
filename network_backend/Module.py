@@ -34,7 +34,7 @@ class ModuleI:
     def backprop(self, delta_out):
         raise NotImplementedError()
 
-    # weights += delta
+    # weights -= delta
     def update(self, delta):
         raise NotImplementedError()
 
