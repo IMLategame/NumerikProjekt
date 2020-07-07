@@ -16,3 +16,22 @@ class Sigmoid(NonLinearI):
 
     def d(self, x):
         return self.call(x) * (1 - self.call(x))
+
+def elementWiseReLU(x):
+    return max(x, 0)
+
+def elementWiseReLUDer(x):
+    if x > 0:
+        return 1
+    return 0
+
+class ReLU(NonLinearI):
+    def __init__(self):
+        self.f = np.vectorize(elementWiseReLU)
+        self.df = np.vectorize(elementWiseReLUDer)
+
+    def call(self, x):
+        return self.f(x)
+
+    def d(self, x):
+        return self.df(x)
