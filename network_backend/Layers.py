@@ -19,9 +19,9 @@ class FullyConnectedLayer(ModuleI):
         return self.fctn(self.z)
 
     def backprop(self, delta_out):
-        delta_in = self.fctn.d(self.z) * (self.weights.T @ delta_out)
+        delta_in = self.fctn.d(self.x) * (self.weights.T @ delta_out)
         self.der_b = delta_out
-        self.der_w = delta_out @ self.x.T
+        self.der_w = np.outer(delta_out, self.x)
         return delta_in
 
     def noFeatures(self):
