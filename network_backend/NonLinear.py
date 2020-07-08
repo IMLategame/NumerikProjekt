@@ -4,6 +4,8 @@ class NonLinearI:
     def call(self, x):
         raise NotImplementedError()
 
+    # Watch out. This is NOT the derivative, but the derivative after applying the function:
+    # d = f' o f^-1
     def d(self, x):
         raise NotImplementedError()
 
@@ -15,7 +17,7 @@ class Sigmoid(NonLinearI):
         return 1/(1 + np.exp(-x))
 
     def d(self, x):
-        return self.call(x) * (1 - self.call(x))
+        return x * (1-x) #self.call(x) * (1 - self.call(x))
 
 def elementWiseReLU(x):
     return max(x, 0)
