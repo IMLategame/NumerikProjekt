@@ -1,6 +1,8 @@
 from network_backend.Module import ModuleI
 import ast
 
+from network_backend.NonLinear import Sigmoid
+
 
 class SequentialNetwork(ModuleI):
     def __init__(self, layers):
@@ -42,6 +44,9 @@ class SequentialNetwork(ModuleI):
         list = ast.literal_eval(string)
         self.layers = [layer.fromString(str(l)) for l, layer in self.layers]
 
-class FullyConnectedNet(ModuleI):
-    def __init__(self, ):
-        super(FullyConnectedNet, self).__init__()
+def FullyConnectedNet(sizes, nonLin = Sigmoid()):
+    assert len(sizes) >= 2
+    layers = []
+    for size_in, size_out in zip(sizes[:-1], sizes[1:]):
+        layers.append(FullyConnectedNet(size_in, size_out, nonLin))
+    return SequentialNetwork(layers)
