@@ -1,3 +1,4 @@
+from network_backend.Layers import FullyConnectedLayer
 from network_backend.Module import ModuleI
 import ast
 
@@ -48,5 +49,5 @@ def FullyConnectedNet(sizes, nonLin = Sigmoid()):
     assert len(sizes) >= 2
     layers = []
     for size_in, size_out in zip(sizes[:-1], sizes[1:]):
-        layers.append(FullyConnectedNet(size_in, size_out, nonLin))
+        layers.append(FullyConnectedLayer(size_in, size_out, nonLin))
     return SequentialNetwork(layers)
