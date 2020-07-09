@@ -1,13 +1,15 @@
 from network_backend.Layers import FullyConnectedLayer
 from network_backend.Module import ModuleI
-import ast
+import json
 
 from network_backend.NonLinear import Sigmoid
 
 
 class SequentialNetwork(ModuleI):
-    def __init__(self, layers):
-        super(SequentialNetwork, self).__init__()
+    def __init__(self, layers=None, str=None):
+        super(SequentialNetwork, self).__init__(str)
+        if str is not None:
+            return
         for layer in layers:
             assert isinstance(layer, ModuleI)
         self.layers = layers
@@ -36,18 +38,16 @@ class SequentialNetwork(ModuleI):
 
     def toString(self):
         string = "["
-        for layer in self.layers:
-            string += str(layer) + ","
-        string = string[:-1] + "]"
+        for l in self.layers:
+            string += str(l) + ", "
+        string = string[:-1]+ "]"
         return string
 
-    def fromString(self, string):
-        list = ast.literal_eval(string)
-        self.layers = [layer.fromString(str(l)) for l, layer in self.layers]
-
-def FullyConnectedNet(sizes, nonLin = Sigmoid()):
-    assert len(sizes) >= 2
+def FullyConnectedNet(sizes = None, nonLin = Sigmoid(), str=None):
     layers = []
+    if str is not None:
+        return SequentialNetwork(str=str)
+    assert len(sizes) >= 2
     for size_in, size_out in zip(sizes[:-1], sizes[1:]):
         layers.append(FullyConnectedLayer(size_in, size_out, nonLin))
     return SequentialNetwork(layers)

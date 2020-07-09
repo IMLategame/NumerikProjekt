@@ -1,7 +1,11 @@
+import numpy as np
+
 class ModuleI:
 
     # call super().__init__() in subclasses
-    def __init__(self):
+    def __init__(self, str=None):
+        if str is not None:
+            self.fromString(str)
         self.mode_train = True
 
     # for nicer syntax
@@ -25,6 +29,13 @@ class ModuleI:
         assert item >= 0
         assert item < len(self)
         return self.getGradients()[item]
+
+    def toFile(self, f):
+        f.write(self.toString())
+
+    # TODO: Implement
+    @classmethod
+    def fromFile(cls, f): ...
 
     # x.shape(batch_size, ...)
     def feed_forward(self, x):
@@ -53,8 +64,5 @@ class ModuleI:
         raise NotImplementedError()
 
     def toString(self):
-        raise NotImplementedError()
-
-    def fromString(self, string):
         raise NotImplementedError()
 
