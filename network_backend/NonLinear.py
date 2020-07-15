@@ -12,6 +12,7 @@ class NonLinearI:
     def __call__(self, x):
         return self.call(x)
 
+
 class Sigmoid(NonLinearI):
     def call(self, x):
         return 1/(1 + np.exp(-x))
@@ -19,13 +20,16 @@ class Sigmoid(NonLinearI):
     def d(self, x):
         return x * (1-x) #self.call(x) * (1 - self.call(x))
 
+
 def elementWiseReLU(x):
     return max(x, 0)
+
 
 def elementWiseReLUDer(x):
     if x > 0:
         return 1
     return 0
+
 
 class ReLU(NonLinearI):
     def __init__(self):
@@ -37,3 +41,9 @@ class ReLU(NonLinearI):
 
     def d(self, x):
         return self.df(x)
+
+
+fctn_dict = {
+    "Sigmoid": Sigmoid,
+    "ReLU": ReLU
+}

@@ -1,4 +1,4 @@
-from network_backend.Module import ModuleI
+from network_backend.Modules import ModuleI
 import numpy as np
 
 
