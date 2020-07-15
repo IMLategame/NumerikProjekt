@@ -8,7 +8,7 @@ from network_backend.Loss import BCELoss, L2Loss
 from network_backend.Optimizers import SGD, Adam
 from network_backend.NonLinear import ReLU, Sigmoid
 import numpy as np
-import random
+import random, time
 
 data = [[np.array((0, 0)), np.array(0)], [np.array((0, 1)), np.array(1)], [np.array((1, 0)), np.array(1)], [np.array((1, 1)), np.array(0)]]
 
@@ -18,6 +18,7 @@ criterion =  L2Loss() # BCELoss()  #
 opt = Adam(net)  # SGD(net, 0.001) #
 epochs = 500000
 eval = 5000
+start = time.time()
 for epoch in range(epochs):
     random.shuffle(data)
     for x, y in data:
@@ -32,14 +33,19 @@ for epoch in range(epochs):
         for x, y in data:
             print("{0[0]}, \t{0[1]} \t-> \t{1[0]:.6f} \t vs \t{2}".format(x, net(x), y))
         print("loss = {}".format(loss))
+end = time.time()
+time_diff = end-start
+
+print("Trained for {} s \n \t {} s/epoch".format(time_diff, time_diff/(epoch+1)))
 
 print("Final Values:")
 for x, y in data:
     print("{0[0]}, \t{0[1]} \t-> \t{1[0]:.6f} \t vs \t{2}".format(x, net(x), y))
-loss = sum([criterion(net(x), y)[0] for x,y in data])
+loss = sum([criterion(net(x), y)[0] for x, y in data])
 print("final loss = {0[0]} ".format(loss))
 
 # tests for store and load:
+"""
 print(net.toDict())
 print(net)
 string = str(net)
@@ -48,4 +54,4 @@ print(net2.toDict())
 
 for x, y in data:
     print("{0[0]}, \t{0[1]} \t-> \t{1[0]:.6f} \t vs \t{2}".format(x, net(x), y))
-    print("{0[0]}, \t{0[1]} \t-> \t{1[0]:.6f} \t vs \t{2}".format(x, net2(x), y))
+    print("{0[0]}, \t{0[1]} \t-> \t{1[0]:.6f} \t vs \t{2}".format(x, net2(x), y)) """
