@@ -22,13 +22,13 @@ class Sigmoid(NonLinearI):
 
 
 def elementWiseReLU(x):
-    return max(x, 0)
+    return max(x, 0.0)
 
 
 def elementWiseReLUDer(x):
     if x > 0:
-        return 1
-    return 0
+        return 1.0
+    return 0.0
 
 
 class ReLU(NonLinearI):
@@ -43,7 +43,16 @@ class ReLU(NonLinearI):
         return self.df(x)
 
 
+class Identity(NonLinearI):
+    def call(self, x):
+        return x
+
+    def d(self, x):
+        return np.ones_like(x)
+
+
 fctn_dict = {
     "Sigmoid": Sigmoid,
-    "ReLU": ReLU
+    "ReLU": ReLU,
+    "Identity": Identity
 }
