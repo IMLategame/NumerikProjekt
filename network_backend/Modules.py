@@ -1,6 +1,6 @@
 import numpy as np
 
-from network_backend.NonLinear import Sigmoid, NonLinearI, fctn_dict
+from network_backend.NonLinear import Sigmoid, NonLinearI, fctn_dict, ReLU, Identity
 import json
 
 class ModuleI:
@@ -148,8 +148,8 @@ class FullyConnectedLayer(ModuleI):
 
     def feed_forward(self, x):
         self.x = x
-        self.z = self.weights @ x + self.bias
-        return self.fctn(self.z)
+        z = self.weights @ x + self.bias
+        return self.fctn(z)
 
     def backprop(self, delta_out):
         delta_in = self.fctn.d(self.x) * (self.weights.T @ delta_out)
@@ -165,6 +165,10 @@ class FullyConnectedLayer(ModuleI):
         self.bias -= delta[1]
 
     def getGradients(self):
+        if len(self.der_w.shape) > 1:
+            n = self.der_w.shape[-1]
+            self.der_w = np.sum(self.der_w, axis=-1)/n
+            self.der_b = np.sum(self.der_b, axis=-1)/n
         return [self.der_w, self.der_b]
 
     def toDict(self):
@@ -183,8 +187,38 @@ class FullyConnectedLayer(ModuleI):
         layer.bias = np.array(obj["bias"])
         return layer
 
+class NonLinearLayer(ModuleI):
+    def __init__(self, nonLinearity):
+        assert isinstance(nonLinearity, NonLinearI)
+        self.nonLin = nonLinearity
+
+    def feed_forward(self, x):
+        return self.nonLin(x)
+
+    def backprop(self, delta_out):
+        return self.nonLin.d(delta_out)
+
+    def noFeatures(self):
+        return 0
+
+    def update(self, delta):
+        pass
+
+    def getGradients(self):
+        return []
+
+    def toDict(self):
+        obj = super(NonLinearLayer, self).toDict()
+        obj["non_linearity"] = type(self.nonLin).__name__
+        return obj
+
+    @classmethod
+    def dict2Mod(cls, obj):
+        return NonLinearLayer(fctn_dict[obj["non_linearity"]])
+
 
 class_dict = {
     "FullyConnectedLayer": FullyConnectedLayer,
-    "SequentialNetwork": SequentialNetwork
+    "SequentialNetwork": SequentialNetwork,
+    "NonLinearLayer": NonLinearLayer
 }
