@@ -16,7 +16,8 @@ class LossI:
 
 class L2Loss(LossI):
     def loss(self, out, labels):
-        return 1/2 * np.outer(labels-out, labels-out)
+        outer = 1/2 * np.outer(labels-out, labels-out)
+        return [outer[i][i] for i in range(outer.shape[0])]
 
     def d(self, out, labels):
         outer_prod = np.outer(out - labels, np.ones(labels.shape))
