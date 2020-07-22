@@ -6,14 +6,19 @@ class SimpleBatcher:
     def __init__(self, batch_size, dataset):
         self.batch_size = batch_size
         self.dataset = dataset
-        assert len(dataset)%batch_size == 0, "The length of the dataset has to be divisible by the batch size."
 
     def __len__(self):
         return len(self.dataset)
 
     def __iter__(self):
         shuffeled_data = list(self.dataset)
+        while len(shuffeled_data)<self.batch_size:
+            shuffeled_data += shuffeled_data
         random.shuffle(shuffeled_data)
+        mod = len(shuffeled_data)%self.batch_size
+        if mod != 0:
+            shuffeled_data += shuffeled_data[:self.batch_size-mod]
+            random.shuffle(shuffeled_data)
         batched_points = []
         batch_size = self.batch_size
         n = int(len(self.dataset)/batch_size)
