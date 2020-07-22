@@ -2,7 +2,7 @@ import numpy as np
 
 from game.board import Board
 from game.moves import Move
-from utils import ReplayMem
+from utils import ReplayMem, encode
 import re
 from random import random, sample
 
@@ -49,7 +49,7 @@ class CmdPlayer(PlayerI):
         super().__init__(playerID)
 
     # The function we have this class for
-    def getMove(self, phase, board: Board):
+    def get_move(self, phase, board: Board):
         print("Its your turn. You are player {} \n The phase is {}".format(
             board.string_rep[board.player_map[self.playerID]], phase))
         print(board)
@@ -93,7 +93,7 @@ class NetPlayerI(PlayerI):
 class QNetPlayer(NetPlayerI):
     def __init__(self, net, playerID=0):
         """
-        :param net: R^127 -> R
+        :param net: R^103 -> R
         :param playerID: in [0,1]
 
         input vector: phases in R^4 x board in R^24*2 (my positions x enemy positions) x move.type in R^3 x move.start in R^24 x move.end in R^24
@@ -128,77 +128,24 @@ class QNetPlayer(NetPlayerI):
 
         """
         # Call this first in your implementations of the player also.
-        super(QNetPlayer, self).__init__(playerID)
+        super(QNetPlayer, self).__init__(net, playerID)
         self.net = net
-
-    # encode all information one-hot.
-    def encode(self, move, board, phase):
-        assert phase in ["set", "move", "jump", "take"]
-        phase2idx = {"set": 0, "move": 1, "jump": 2, "take": 3}
-        moveType2idx = {"set": 0, "move": 1, "take": 2}
-        phase_enc = [0.0, 0.0, 0.0, 0.0]
-        phase_enc[phase2idx[phase]] = 1.0
-        my_pos = []
-        for x in range(3):
-            for y in range(3):
-                if x == 1 and y == 1:
-                    continue
-                for r in range(3):
-                    if board[r, x, y] == board.player_map[self.playerID]:
-                        my_pos.append(1.0)
-                    else:
-                        my_pos.append(0.0)
-        enemy_pos = []
-        for x in range(3):
-            for y in range(3):
-                if x == 1 and y == 1:
-                    continue
-                for r in range(3):
-                    if board[r, x, y] == board.player_map[1-self.playerID]:
-                        enemy_pos.append(1.0)
-                    else:
-                        enemy_pos.append(0.0)
-        move_type_enc = [0.0, 0.0, 0.0]
-        move_type_enc[moveType2idx[move.type]] = 1.0
-        move_start = []
-        for x in range(3):
-            for y in range(3):
-                if x == 1 and y == 1:
-                    continue
-                for r in range(3):
-                    if (r, x, y) == move.start:
-                        move_start.append(1.0)
-                    else:
-                        move_start.append(0.0)
-        move_end = []
-        for x in range(3):
-            for y in range(3):
-                if x == 1 and y == 1:
-                    continue
-                for r in range(3):
-                    if (r, x, y) == move.end:
-                        move_end.append(1.0)
-                    else:
-                        move_end.append(0.0)
-        assert len(phase_enc) == 4
-        assert len(my_pos) == 24
-        assert len(enemy_pos) == 24
-        assert len(move_type_enc) == 3
-        assert len(move_start) == 24
-        assert len(move_end) == 24
-        enc = phase_enc + my_pos + enemy_pos + move_type_enc + move_start + move_end
-        return np.array(enc)
 
     def get_move(self, phase, board: Board, eps=0.0):
         legal_moves = board.legal_moves(phase, self.playerID)
+        if len(legal_moves) == 0:
+            return None
         if random() < eps:
-            return sample(legal_moves)
+            return sample(legal_moves, 1)[0]
         max_q = -2 ** 62
         max_action = None
         for move in legal_moves:
-            encoded = self.encode(move, board, phase)
+            encoded = encode(move, board, phase, self.playerID)
             q_val = self.net(encoded)
             if q_val > max_q:
                 max_q = q_val
                 max_action = move
-        return move
+        return max_action
+
+    def win(self):
+        pass
