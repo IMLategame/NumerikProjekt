@@ -171,6 +171,8 @@ class Board:
         # Is it even a move?
         assert phase in ["set", "move", "jump", "take"]
         assert player in [0, 1]
+        if move is None:
+            return False
         assert move.end[1] in [0, 1, 2]
         assert move.end[2] in [0, 1, 2]
         assert move.end[0] in [0, 1, 2]
@@ -278,3 +280,7 @@ class Board:
         if len(self.legal_moves(phase, player)) == 0:
             return True
         return False
+
+    def clear(self):
+        self.board_state = [[[None if x == 1 and y == 1 else self.player_map[-1] for y in range(3)]
+                             for x in range(3)] for ring in range(3)]
