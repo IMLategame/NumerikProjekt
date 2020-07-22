@@ -4,6 +4,7 @@ from game.board import Board
 from game.moves import Move
 from utils import ReplayMem
 import re
+from random import random, sample
 
 """
     Interface for Players.
@@ -83,7 +84,7 @@ class NetPlayerI(PlayerI):
     def __init__(self, net, playerID=0):
         super(NetPlayerI, self).__init__(playerID)
 
-    def get_move(self, phase, board: Board):
+    def get_move(self, phase, board: Board, eps=0):
         return super(NetPlayerI, self).get_move(phase, board)
 
     def win(self):
@@ -188,8 +189,10 @@ class QNetPlayer(NetPlayerI):
         enc = phase_enc + my_pos + enemy_pos + move_type_enc + move_start + move_end
         return np.array(enc)
 
-    def get_move(self, phase, board: Board):
+    def get_move(self, phase, board: Board, eps=0.0):
         legal_moves = board.legal_moves(phase, self.playerID)
+        if random() < eps:
+            return sample(legal_moves)
         max_q = -2 ** 62
         max_action = None
         for move in legal_moves:
