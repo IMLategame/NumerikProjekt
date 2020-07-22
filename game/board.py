@@ -4,7 +4,7 @@ from game.moves import Move
     The main class in the game. Representation of the Board.
     We have the following indices:
     
-     (2,0,0) --------------------- -- (2,1,0) ------------------------ (2,2,0)
+     (2,0,0) ------------------------ (2,1,0) ------------------------ (2,2,0)
         |                                |                                |
         |                                |                                |
         |                                |                                |
@@ -28,7 +28,7 @@ from game.moves import Move
         |                                |                                |
         |                                |                                |
         |                                |                                |
-     (2,0,0) --------------------- -- (2,1,0) ------------------------ (2,2,0)
+     (2,0,0) ------------------------ (2,1,0) ------------------------ (2,2,0)
         
      Well this was painfull ...
 """
@@ -121,6 +121,50 @@ class Board:
                                                        self.string_rep[self[2, 0, 2]], self.string_rep[self[2, 1, 2]],
                                                        self.string_rep[self[2, 2, 2]])
         return string
+
+    def legal_moves(self, phase, player):
+        assert phase in ["set", "move", "jump", "take"]
+        assert player in [0, 1]
+        moves = []
+        if phase == "set":
+            for x in range(3):
+                for y in range(3):
+                    if x == 1 and y == 1:
+                        continue
+                    for r in range(3):
+                        if self[r, x, y] == self.player_map[-1]:
+                            moves.append(Move("set", (r, x, y)))
+        elif phase in ["move", "jump"]:
+            start_vals = []
+            for x in range(3):
+                for y in range(3):
+                    if x == 1 and y == 1:
+                        continue
+                    for r in range(3):
+                        if self[r, x, y] == self.player_map[player]:
+                            start_vals.append((r, x, y))
+            end_vals = []
+            for x in range(3):
+                for y in range(3):
+                    if x == 1 and y == 1:
+                        continue
+                    for r in range(3):
+                        if self[r, x, y] == self.player_map[-1]:
+                            end_vals.append((r, x, y))
+            for start in start_vals:
+                for end in end_vals:
+                    move = Move("move", end, start)
+                    if self.is_legal(move, phase, player):
+                        moves.append(move)
+        elif phase == "take":
+            for x in range(3):
+                for y in range(3):
+                    if x == 1 and y == 1:
+                        continue
+                    for r in range(3):
+                        if self[r, x, y] == self.player_map[1-player]:
+                            moves.append(Move("take", (r, x, y)))
+        return moves
 
     # Is the given move from the player in the phase legal given the baord state?
     def is_legal(self, move: Move, phase, player):
@@ -222,4 +266,15 @@ class Board:
         for mull in mulls:
             if point in mull:
                 return True
+        return False
+
+    def is_terminal(self, phase, player):
+        assert phase in ["set", "move", "jump", "take"]
+        assert player in [0, 1]
+        if phase == "set":
+            return False
+        if len(self.get_player_pos(0)) <= 2 or len(self.get_player_pos(1)) <= 2:
+            return True
+        if len(self.legal_moves(phase, player)) == 0:
+            return True
         return False

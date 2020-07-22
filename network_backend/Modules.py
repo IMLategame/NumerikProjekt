@@ -141,20 +141,22 @@ class FullyConnectedLayer(ModuleI):
         super(FullyConnectedLayer, self).__init__()
         assert isinstance(fctn, NonLinearI)
         self.weights = np.random.normal(size=(lay_out, lay_in))
-        self.bias = np.random.normal(size=lay_out)
+        self.bias = np.zeros(lay_out)
         self.fctn = fctn
         self.lay_in = lay_in
         self.lay_out = lay_out
 
     def feed_forward(self, x):
+        if len(x.shape) <= 1:
+            x = x.reshape((x.shape[0], 1))
         self.x = x
-        z = self.weights @ x + self.bias
+        z = self.weights @ x + self.bias[:, np.newaxis]
         return self.fctn(z)
 
     def backprop(self, delta_out):
         delta_in = self.fctn.d(self.x) * (self.weights.T @ delta_out)
         self.der_b = delta_out
-        self.der_w = np.outer(delta_out, self.x)
+        self.der_w = delta_out @ self.x.T
         return delta_in
 
     def noFeatures(self):
@@ -165,9 +167,8 @@ class FullyConnectedLayer(ModuleI):
         self.bias -= delta[1]
 
     def getGradients(self):
-        if len(self.der_w.shape) > 1:
+        if len(self.der_b.shape) > 1:
             n = self.der_w.shape[-1]
-            self.der_w = np.sum(self.der_w, axis=-1)/n
             self.der_b = np.sum(self.der_b, axis=-1)/n
         return [self.der_w, self.der_b]
 
@@ -186,6 +187,7 @@ class FullyConnectedLayer(ModuleI):
         layer.weights = np.array(obj["weights"])
         layer.bias = np.array(obj["bias"])
         return layer
+
 
 class NonLinearLayer(ModuleI):
     def __init__(self, nonLinearity):
