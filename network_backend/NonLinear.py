@@ -61,5 +61,6 @@ class Tanh(NonLinearI):
 fctn_dict = {
     "Sigmoid": Sigmoid,
     "ReLU": ReLU,
-    "Identity": Identity
+    "Identity": Identity,
+    "Tanh": Tanh
 }
