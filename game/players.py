@@ -1,3 +1,5 @@
+import numpy as np
+
 from game.board import Board
 from game.moves import Move
 from utils import ReplayMem
@@ -77,8 +79,17 @@ class CmdPlayer(PlayerI):
             if board.is_legal(move, phase, self.playerID):
                 return move
 
+class NetPlayerI(PlayerI):
+    def __init__(self, net, playerID=0):
+        super(NetPlayerI, self).__init__(playerID)
 
-class QNetPlayer(PlayerI):
+    def get_move(self, phase, board: Board):
+        return super(NetPlayerI, self).get_move(phase, board)
+
+    def win(self):
+        super(NetPlayerI, self).win()
+
+class QNetPlayer(NetPlayerI):
     def __init__(self, net, playerID=0):
         """
         :param net: R^127 -> R
@@ -148,10 +159,43 @@ class QNetPlayer(PlayerI):
                         enemy_pos.append(0.0)
         move_type_enc = [0.0, 0.0, 0.0]
         move_type_enc[moveType2idx[move.type]] = 1.0
+        move_start = []
+        for x in range(3):
+            for y in range(3):
+                if x == 1 and y == 1:
+                    continue
+                for r in range(3):
+                    if (r, x, y) == move.start:
+                        move_start.append(1.0)
+                    else:
+                        move_start.append(0.0)
+        move_end = []
+        for x in range(3):
+            for y in range(3):
+                if x == 1 and y == 1:
+                    continue
+                for r in range(3):
+                    if (r, x, y) == move.end:
+                        move_end.append(1.0)
+                    else:
+                        move_end.append(0.0)
+        assert len(phase_enc) == 4
+        assert len(my_pos) == 24
+        assert len(enemy_pos) == 24
+        assert len(move_type_enc) == 3
+        assert len(move_start) == 24
+        assert len(move_end) == 24
+        enc = phase_enc + my_pos + enemy_pos + move_type_enc + move_start + move_end
+        return np.array(enc)
 
     def get_move(self, phase, board: Board):
         legal_moves = board.legal_moves(phase, self.playerID)
         max_q = -2 ** 62
         max_action = None
         for move in legal_moves:
-
+            encoded = self.encode(move, board, phase)
+            q_val = self.net(encoded)
+            if q_val > max_q:
+                max_q = q_val
+                max_action = move
+        return move

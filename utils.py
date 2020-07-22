@@ -29,3 +29,10 @@ class ReplayMem:
         batch_y = [p[3] if p[0].isTerminal(p[2], p[6]) else p[3] + self.gamma * self.Q_fctn(p[0], p[1], p[2], p[6])
                    for p in batch]
         return batch_x, batch_y
+
+    def __len__(self):
+        return len(self.mem)
+
+    def __getitem__(self, item):
+        assert item < len(self)
+        return self.mem[item]
