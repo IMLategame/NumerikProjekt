@@ -129,3 +129,6 @@ dmypy.json
 .pyre/
 
 .idea/
+
+# Raw network data
+.net
