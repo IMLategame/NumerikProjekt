@@ -19,7 +19,8 @@ class L2Loss(LossI):
         return 1/2 * np.outer(labels-out, labels-out)
 
     def d(self, out, labels):
-        return np.outer(out - labels, np.ones(labels.shape))[0]
+        outer_prod = np.outer(out - labels, np.ones(labels.shape))
+        return np.array([row[0] for row in outer_prod])[np.newaxis, :]
 
 
 class BCELoss(LossI):
@@ -30,4 +31,4 @@ class BCELoss(LossI):
         return -(labels * np.log2(out+self.eps) + (1-labels) * np.log2(1-out+self.eps))
 
     def d(self, out, labels):
-        return (1-labels)/(1-out+self.eps) - labels/(out+self.eps)
+        return (1 - labels) / (1 - out + self.eps) - labels / (out + self.eps)

@@ -6,7 +6,7 @@ sys.path.insert(1, str(path))
 from network_backend.Modules import ModuleI, FullyConnectedNet, SequentialNetwork, FullyConnectedLayer, NonLinearLayer
 from network_backend.Loss import BCELoss, L2Loss
 from network_backend.Optimizers import SGD, Adam
-from network_backend.NonLinear import ReLU, Sigmoid, Identity
+from network_backend.NonLinear import ReLU, Sigmoid, Identity, Tanh
 from network_backend.Batching import SimpleBatcher
 import numpy as np
 import random, time
@@ -14,7 +14,7 @@ import random, time
 data = [[np.array((0, 0)), np.array(0)], [np.array((0, 1)), np.array(1)], [np.array((1, 0)), np.array(1)], [np.array((1, 1)), np.array(0)]]
 
 
-net = FullyConnectedNet([2, 3, 1])
+net = FullyConnectedNet([2, 3, 1], nonLin=Sigmoid())
 #net = SequentialNetwork([FullyConnectedLayer(2, 3, Identity()), NonLinearLayer(Sigmoid()), FullyConnectedLayer(3, 1, Sigmoid())])
 criterion = BCELoss()  # L2Loss() #
 opt = Adam(net)  # SGD(net, 0.001) #
@@ -33,7 +33,7 @@ for epoch in range(epochs):
         net.backprop(delta)
         opt.take_step()
     loss = sum([criterion(net(x), y)[0] for x, y in data])
-    if loss < 0.1:
+    if loss < 0.01:
         break
     if (epoch+1) % eval == 0:
         for x, y in data:
