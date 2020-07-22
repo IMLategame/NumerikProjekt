@@ -1,5 +1,66 @@
 from copy import deepcopy
 import random
+import numpy as np
+
+
+# encode all information one-hot.
+def encode(move, board, phase, playerID):
+    assert phase in ["set", "move", "jump", "take"]
+    phase2idx = {"set": 0, "move": 1, "jump": 2, "take": 3}
+    moveType2idx = {"set": 0, "move": 1, "take": 2}
+    phase_enc = [0.0, 0.0, 0.0, 0.0]
+    phase_enc[phase2idx[phase]] = 1.0
+    my_pos = []
+    for x in range(3):
+        for y in range(3):
+            if x == 1 and y == 1:
+                continue
+            for r in range(3):
+                if board[r, x, y] == board.player_map[playerID]:
+                    my_pos.append(1.0)
+                else:
+                    my_pos.append(0.0)
+    enemy_pos = []
+    for x in range(3):
+        for y in range(3):
+            if x == 1 and y == 1:
+                continue
+            for r in range(3):
+                if board[r, x, y] == board.player_map[1 - playerID]:
+                    enemy_pos.append(1.0)
+                else:
+                    enemy_pos.append(0.0)
+    move_type_enc = [0.0, 0.0, 0.0]
+    move_type_enc[moveType2idx[move.type]] = 1.0
+    move_start = []
+    for x in range(3):
+        for y in range(3):
+            if x == 1 and y == 1:
+                continue
+            for r in range(3):
+                if (r, x, y) == move.start:
+                    move_start.append(1.0)
+                else:
+                    move_start.append(0.0)
+    move_end = []
+    for x in range(3):
+        for y in range(3):
+            if x == 1 and y == 1:
+                continue
+            for r in range(3):
+                if (r, x, y) == move.end:
+                    move_end.append(1.0)
+                else:
+                    move_end.append(0.0)
+    assert len(phase_enc) == 4
+    assert len(my_pos) == 24
+    assert len(enemy_pos) == 24
+    assert len(move_type_enc) == 3
+    assert len(move_start) == 24
+    assert len(move_end) == 24
+    enc = phase_enc + my_pos + enemy_pos + move_type_enc + move_start + move_end
+    return np.array(enc)
+
 
 class ReplayMem:
     def __init__(self, capacity, batch_size, Q_fctn, gamma):
@@ -18,17 +79,11 @@ class ReplayMem:
         post = deepcopy(state_post)
         self.mem.append([prev, phase_prev, a, r, post, phase_post, turn_player])
 
-    def get_minibatch(self):
-        assert len(self.dataset) > 0, "No data in memory."
-        shuffeled_data = []
-        while len(shuffeled_data) < self.batch_size:
-            shuffeled_data += list(self.dataset)
-        shuffeled_data = random.shuffle(shuffeled_data)
-        batch = shuffeled_data[:self.batch_size]
-        batch_x = [p[0:3]+[p[6]] for p in batch]
-        batch_y = [p[3] if p[0].isTerminal(p[2], p[6]) else p[3] + self.gamma * self.Q_fctn(p[0], p[1], p[2], p[6])
-                   for p in batch]
-        return batch_x, batch_y
+    def get_data(self):
+        return [
+            (encode(p[2], p[0], p[1], p[6]), p[3]) if p[4].is_terminal(p[5], p[6]) else
+            (encode(p[2], p[0], p[1], p[6]), p[3] + self.gamma * self.Q_fctn(encode(p[2], p[4], p[5], p[6]))[0][0]) for
+            p in self.mem]
 
     def __len__(self):
         return len(self.mem)
@@ -36,3 +91,9 @@ class ReplayMem:
     def __getitem__(self, item):
         assert item < len(self)
         return self.mem[item]
+
+    def __str__(self):
+        string = ""
+        for data in self.mem:
+            string += str(data) + "\n"
+        return string
