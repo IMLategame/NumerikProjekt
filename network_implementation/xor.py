@@ -6,15 +6,15 @@ sys.path.insert(1, str(path))
 from network_backend.Modules import ModuleI, FullyConnectedNet, SequentialNetwork, FullyConnectedLayer, NonLinearLayer
 from network_backend.Loss import BCELoss, L2Loss
 from network_backend.Optimizers import SGD, Adam
-from network_backend.NonLinear import ReLU, Sigmoid, Identity
+from network_backend.NonLinear import ReLU, Sigmoid, Identity, Tanh
 import numpy as np
 import random, time
 
 data = [[np.array((0, 0)), np.array(0)], [np.array((0, 1)), np.array(1)], [np.array((1, 0)), np.array(1)], [np.array((1, 1)), np.array(0)]]
 
-net = FullyConnectedNet([2, 3, 1])
+net = FullyConnectedNet([2, 3, 1], nonLin=Tanh())
 #net = SequentialNetwork([FullyConnectedLayer(2, 3, Identity()), NonLinearLayer(Sigmoid()), FullyConnectedLayer(3, 1, Sigmoid())])
-criterion = BCELoss()  # L2Loss() #
+criterion = L2Loss() # BCELoss()  #
 opt = Adam(net)  # SGD(net, 0.001) #
 epochs = 500000
 eval = 5000
