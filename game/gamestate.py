@@ -1,8 +1,8 @@
 from game.board import Board
 from game.players import PlayerI, CmdPlayer, NetPlayerI
 from copy import deepcopy
-from utils import ReplayMem
-from network_backend.rewardFunctions import RewardI
+from network_backend.reinforcement_learning.utils import ReplayMem
+from network_backend.reinforcement_learning.rewardFunctions import RewardI
 
 
 class Game:

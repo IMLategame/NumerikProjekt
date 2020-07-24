@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class NonLinearI:
     def call(self, x):
         raise NotImplementedError()
@@ -49,12 +50,13 @@ class Identity(NonLinearI):
 
     def d(self, x):
         return np.ones_like(x)
-    
+
+
 class Tanh(NonLinearI):
     def call(self, x):
         return np.tanh(x)
         
-    def d(self,x):
+    def d(self, x):
         return 1-x*x
 
 

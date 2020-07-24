@@ -1,10 +1,9 @@
 import numpy as np
-
-from network_backend.NonLinear import Sigmoid, NonLinearI, fctn_dict, ReLU, Identity
+from network_backend.NonLinear import Sigmoid, NonLinearI, fctn_dict
 import json
 
-class ModuleI:
 
+class ModuleI:
     # call super().__init__() in subclasses
     def __init__(self):
         self.mode_train = True
@@ -190,9 +189,10 @@ class FullyConnectedLayer(ModuleI):
 
 
 class NonLinearLayer(ModuleI):
-    def __init__(self, nonLinearity):
-        assert isinstance(nonLinearity, NonLinearI)
-        self.nonLin = nonLinearity
+    def __init__(self, non_linearity):
+        super().__init__()
+        assert isinstance(non_linearity, NonLinearI)
+        self.nonLin = non_linearity
 
     def feed_forward(self, x):
         return self.nonLin(x)

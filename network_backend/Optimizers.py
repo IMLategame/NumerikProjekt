@@ -12,10 +12,11 @@ class OptimizerI:
     def take_step(self):
         raise NotImplementedError()
 
-"""
-    The classic Optimizer is also the simplest: Vanilla stochastic gradient descent
-"""
+
 class SGD(OptimizerI):
+    """
+        The classic Optimizer is also the simplest: Vanilla stochastic gradient descent
+    """
     def __init__(self, net, rate):
         super().__init__(net)
         self.rate = rate
@@ -25,20 +26,21 @@ class SGD(OptimizerI):
         delta = [self.rate * grad for grad in gradients]
         self.net.update(delta)
 
-"""
-    This optimizer is more advanced. It uses the first two moments.
-    If we went into some direction for a few steps already,
-    might start to take bigger steps into said direction.
-    
-    alpha = step size
-    beta_1 = decay rate for first moment (in [0,1])
-    beta_2 = decay rate for second moment (in [0,1])
-    eps: to not divide by zero
-    
-    For further explanation see https://arxiv.org/pdf/1412.6980.pdf
-"""
+
 class Adam(OptimizerI):
-    def __init__(self, net, alpha = 0.001, beta_1 = 0.9, beta_2 = 0.999, eps = 10e-8):
+    """
+        This optimizer is more advanced. It uses the first two moments.
+        If we went into some direction for a few steps already,
+        might start to take bigger steps into said direction.
+
+        alpha = step size
+        beta_1 = decay rate for first moment (in [0,1])
+        beta_2 = decay rate for second moment (in [0,1])
+        eps: to not divide by zero
+
+        For further explanation see https://arxiv.org/pdf/1412.6980.pdf
+    """
+    def __init__(self, net, alpha=0.001, beta_1=0.9, beta_2=0.999, eps=10e-8):
         super(Adam, self).__init__(net)
         self.alpha = alpha
         self.beta_1 = beta_1
