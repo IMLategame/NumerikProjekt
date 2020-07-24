@@ -9,9 +9,10 @@ from network_backend.Optimizers import SGD, Adam
 from network_backend.NonLinear import ReLU, Sigmoid, Identity, Tanh
 from network_backend.Batching import SimpleBatcher
 import numpy as np
-import random, time
+import time
 
-data = [[np.array((0, 0)), np.array(0)], [np.array((0, 1)), np.array(1)], [np.array((1, 0)), np.array(1)], [np.array((1, 1)), np.array(0)]]
+data = [[np.array((0, 0)), np.array(0)], [np.array((0, 1)), np.array(1)],
+        [np.array((1, 0)), np.array(1)], [np.array((1, 1)), np.array(0)]]
 
 
 net = FullyConnectedNet([2, 3, 1], nonLin=Sigmoid())
