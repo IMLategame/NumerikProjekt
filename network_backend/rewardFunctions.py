@@ -16,5 +16,6 @@ class SimpleReward(RewardI):
         if state_post.is_terminal(phase_prev, player):
             if len(state_post.get_player_pos(player)) >= 3:
                 return self.win
+        diff_own_pieces = len(state_prev.get_player_pos(player)) - len(state_post.get_player_pos(player))
         diff_enemy_pieces = len(state_prev.get_player_pos(1-player)) - len(state_post.get_player_pos(1-player))
-        return diff_enemy_pieces*self.take_factor - self.pen
+        return (diff_enemy_pieces-diff_own_pieces) * self.take_factor - self.pen
