@@ -1,15 +1,16 @@
 from copy import deepcopy
-import random
+from network_backend.reinforcement_learning.encodings import EncodingI
+from network_backend.reinforcement_learning.goalFunctions import GoalFunctionI
 
 
 class ReplayMem:
-    def __init__(self, capacity, batch_size, Q_fctn, gamma, encode, goal_value_function):
+    def __init__(self, capacity, batch_size, Q_fctn, gamma, encode: EncodingI, goal_value_function: GoalFunctionI):
         self.N = capacity
         self.batch_size = batch_size
         self.Q_fctn = Q_fctn
         self.gamma = gamma
         self.encode = encode
-
+        self.goal = goal_value_function
         self.mem = []
 
     def add(self, state_prev, phase_prev, action, reward, state_post, phase_post, turn_player=0):
@@ -23,9 +24,8 @@ class ReplayMem:
 
     def get_data(self):
         return [
-            (self.encode(p[2], p[0], p[1], p[6]), p[3]) if p[4].is_terminal(p[5], p[6]) else
-            (self.encode(p[2], p[0], p[1], p[6]), p[3] + self.gamma * self.Q_fctn(
-                self.encode(p[2], p[4], p[5], p[6]))[0][0]) for p in self.mem]
+            (self.encode(p[2], p[0], p[1], p[6]), self.goal(self.Q_fctn, self.encode, self.gamma, p[0], p[1], p[2],
+                                                            p[3], p[4], p[5], p[6])) for p in self.mem]
 
     def __len__(self):
         return len(self.mem)
