@@ -28,7 +28,7 @@ from game.moves import Move
         |                                |                                |
         |                                |                                |
         |                                |                                |
-     (2,0,0) ------------------------ (2,1,0) ------------------------ (2,2,0)
+     (2,0,2) ------------------------ (2,1,2) ------------------------ (2,2,2)
         
      Well this was painfull ...
 """
@@ -259,7 +259,9 @@ class Board:
                             mulls.append((p1, p2, p3))
                     # different ring, but same x and y
                     elif p1[1] == p2[1] and p1[1] == p3[1] and p1[2] == p2[2] and p1[2] == p3[2]:
-                        mulls.append((p1, p2, p3))
+                        # exclude the edges
+                        if p1[1] == 1 or p1[2] == 1:
+                            mulls.append((p1, p2, p3))
         return mulls
 
     # Is the point part of a mull?
