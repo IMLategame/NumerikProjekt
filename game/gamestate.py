@@ -144,7 +144,7 @@ class Game:
             self.board.do(move, self.p1.playerID)
         # move phase
         while len(self.board.get_player_pos(self.p0.playerID)) > 2 and len(
-                self.board.get_player_pos(self.p1.playerID)) > 2:
+                self.board.get_player_pos(self.p1.playerID)) > 2 and len(self.board.legal_moves("move", self.p0.playerID)) > 0:
             if len(self.board.get_player_pos(self.p0.playerID)) == 3:
                 move = self.get_and_do_move(self.p0, "jump")
             else:
@@ -153,6 +153,8 @@ class Game:
                 self.get_and_do_move(self.p0, "take")
                 if len(self.board.get_player_pos(self.p1.playerID)) <= 2:
                     continue
+            if len(self.board.legal_moves("move", self.p1.playerID)) == 0:
+                break
             if len(self.board.get_player_pos(self.p1.playerID)) == 3:
                 move = self.get_and_do_move(self.p1, "jump")
             else:
@@ -160,7 +162,8 @@ class Game:
             if self.board.in_mull(self.p1.playerID, move.end):
                 self.get_and_do_move(self.p1, "take")
         # check winner
-        if len(self.board.get_player_pos(self.p0.playerID)) > 2:
+        if len(self.board.get_player_pos(self.p0.playerID)) > 2 or len(
+                self.board.legal_moves("move", self.p1.playerID)) == 0:
             self.p0.win()
         else:
             self.p1.win()
