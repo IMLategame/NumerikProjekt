@@ -5,13 +5,12 @@ import re
 from random import random, sample
 from copy import deepcopy
 
-"""
-    Interface for Players.
-    Subclass this to create a new player (something that plays the game :) )
-"""
-
 
 class PlayerI:
+    """
+        Interface for Players.
+        Subclass this to create a new player (something that plays the game :) )
+    """
     def __init__(self, playerID=0):
         # Player has an ID that is either 0 or 1
         if playerID in ["a", "b"]:
@@ -209,3 +208,20 @@ class VNetPlayer(NetPlayerI):
                 max_v = q_val
                 max_action = move
         return max_action
+
+
+class RandomPlayer(PlayerI):
+    """
+    This player just does random moves only. Used for evaluation.
+    """
+    def __init__(self, playerID=0):
+        super(RandomPlayer, self).__init__(playerID)
+
+    def get_move(self, phase, board: Board):
+        legal = board.legal_moves(phase, self.playerID)
+        if len(legal) == 0:
+            return None
+        return sample(legal, 1)[0]
+
+    def win(self):
+        pass
