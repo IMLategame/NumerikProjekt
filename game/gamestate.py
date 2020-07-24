@@ -17,6 +17,7 @@ class Game:
         self.no_pieces_set = 9
         self.mem = mem
         self.reward = reward
+        self.winner = None
         if mem is not None:
             assert reward is not None
         if run:
@@ -128,20 +129,28 @@ class Game:
         # check winner
         if len(self.board.get_player_pos(self.p0.playerID)) > 2 or len(self.board.legal_moves("move", self.p1.playerID)) == 0:
             self.p0.win()
+            self.winner = self.p0
         else:
             self.p1.win()
+            self.winner = self.p1
         return moves
 
     # Its playtime!
     # Just get moves from players and perform them on the board.
-    def play(self):
+    def play(self, wait_and_show=False):
         self.board.clear()
         # set phase
         for _ in range(self.no_pieces_set):
             move = self.get_and_do_move(self.p0, "set")
             self.board.do(move, self.p0.playerID)
+            if wait_and_show:
+                print(self.board)
+                input("continue?")
             move = self.get_and_do_move(self.p1, "set")
             self.board.do(move, self.p1.playerID)
+            if wait_and_show:
+                print(self.board)
+                input("continue?")
         # move phase
         while len(self.board.get_player_pos(self.p0.playerID)) > 2 and len(
                 self.board.get_player_pos(self.p1.playerID)) > 2 and len(self.board.legal_moves("move", self.p0.playerID)) > 0:
@@ -149,8 +158,14 @@ class Game:
                 move = self.get_and_do_move(self.p0, "jump")
             else:
                 move = self.get_and_do_move(self.p0, "move")
+            if wait_and_show:
+                print(self.board)
+                input("continue?")
             if self.board.in_mull(self.p0.playerID, move.end):
                 self.get_and_do_move(self.p0, "take")
+                if wait_and_show:
+                    print(self.board)
+                    input("continue?")
                 if len(self.board.get_player_pos(self.p1.playerID)) <= 2:
                     continue
             if len(self.board.legal_moves("move", self.p1.playerID)) == 0:
@@ -159,11 +174,19 @@ class Game:
                 move = self.get_and_do_move(self.p1, "jump")
             else:
                 move = self.get_and_do_move(self.p1, "move")
+            if wait_and_show:
+                print(self.board)
+                input("continue?")
             if self.board.in_mull(self.p1.playerID, move.end):
                 self.get_and_do_move(self.p1, "take")
+                if wait_and_show:
+                    print(self.board)
+                    input("continue?")
         # check winner
-        if len(self.board.get_player_pos(self.p0.playerID)) > 2 or len(
+        if len(self.board.get_player_pos(self.p1.playerID)) <= 2 or len(
                 self.board.legal_moves("move", self.p1.playerID)) == 0:
             self.p0.win()
+            self.winner = self.p0
         else:
             self.p1.win()
+            self.winner = self.p1
