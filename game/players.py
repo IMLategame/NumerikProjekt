@@ -1,10 +1,9 @@
-import numpy as np
-
 from game.board import Board
 from game.moves import Move
-from utils import ReplayMem, encode
+from network_backend.reinforcement_learning.encodings import QEncoding, VEncoding
 import re
 from random import random, sample
+from copy import deepcopy
 
 """
     Interface for Players.
@@ -20,7 +19,8 @@ class PlayerI:
         assert playerID in [0, 1]
         self.playerID = playerID
 
-    # This is the method to implement in 'real' player-classes. It takes a board and the game-phase and should in the implementation return a legal move.
+    # This is the method to implement in 'real' player-classes.
+    # It takes a board and the game-phase and should in the implementation return a legal move.
     def get_move(self, phase, board: Board):
         assert phase in ["set", "move", "jump", "take"]
         raise NotImplementedError()
@@ -32,18 +32,16 @@ class PlayerI:
 
 # Just parsing a string with some (>= 3) numbers in it to the numbers (only the first 3)
 def parse_point(string):
-    print("point stuff:")
-    print([int(s) for s in re.findall(r'\d+', string)])
+    #print("point stuff:")
+    #print([int(s) for s in re.findall(r'\d+', string)])
     r, x, y = [int(s) for s in re.findall(r'\d+', string)][:3]
     return r, x, y
 
 
-"""
-    The first and most simple implementation of a player. Just asks the user what to do on the command line.
-"""
-
-
 class CmdPlayer(PlayerI):
+    """
+        The first and most simple implementation of a player. Just asks the user what to do on the command line.
+    """
     def __init__(self, playerID=0):
         # Call this first in your implementations of the player also.
         super().__init__(playerID)
@@ -80,15 +78,18 @@ class CmdPlayer(PlayerI):
             if board.is_legal(move, phase, self.playerID):
                 return move
 
+
 class NetPlayerI(PlayerI):
     def __init__(self, net, playerID=0):
         super(NetPlayerI, self).__init__(playerID)
+        self.net = net
 
     def get_move(self, phase, board: Board, eps=0):
         return super(NetPlayerI, self).get_move(phase, board)
 
     def win(self):
         super(NetPlayerI, self).win()
+
 
 class QNetPlayer(NetPlayerI):
     def __init__(self, net, playerID=0):
@@ -129,7 +130,6 @@ class QNetPlayer(NetPlayerI):
         """
         # Call this first in your implementations of the player also.
         super(QNetPlayer, self).__init__(net, playerID)
-        self.net = net
 
     def get_move(self, phase, board: Board, eps=0.0):
         legal_moves = board.legal_moves(phase, self.playerID)
@@ -140,7 +140,7 @@ class QNetPlayer(NetPlayerI):
         max_q = -2 ** 62
         max_action = None
         for move in legal_moves:
-            encoded = encode(move, board, phase, self.playerID)
+            encoded = QEncoding()(move, board, phase, self.playerID)
             q_val = self.net(encoded)
             if q_val > max_q:
                 max_q = q_val
@@ -149,3 +149,63 @@ class QNetPlayer(NetPlayerI):
 
     def win(self):
         pass
+
+
+class VNetPlayer(NetPlayerI):
+    def __init__(self, net, playerID=0):
+        """
+        We want to estimate V(s) = max_a Q(s,a)
+
+        input vector: phases in R^4 x board in R^24*2 (my positions x enemy positions)
+
+        board encoding (indices):
+
+            2    ------------------------   11    ------------------------   17
+            |                                |                                |
+            |                                |                                |
+            |                                |                                |
+            |         1    --------------   10    --------------   16         |
+            |         |                      |                      |         |
+            |         |                      |                      |         |
+            |         |                      |                      |         |
+            |         |         0    ----    9    ----   15         |         |
+            |         |         |                         |         |         |
+            |         |         |                         |         |         |
+            |         |         |                         |         |         |
+            5    -    4    -    3                        18    -   19    -   20
+            |         |         |                         |         |         |
+            |         |         |                         |         |         |
+            |         |         |                         |         |         |
+            |         |         6    ----   12    ----   21         |         |
+            |         |                      |                      |         |
+            |         |                      |                      |         |
+            |         |                      |                      |         |
+            |         7    --------------   13    --------------   22         |
+            |                                |                                |
+            |                                |                                |
+            |                                |                                |
+            8    ------------------------   14    ------------------------   23
+
+        :param net: input vector in R^52 to R
+        :param playerID: in [0,1]
+        """
+        super(VNetPlayer, self).__init__(net, playerID)
+
+    def get_move(self, phase, board: Board, eps=0):
+        legal_moves = board.legal_moves(phase, self.playerID)
+        if len(legal_moves) == 0:
+            return None
+        if random() < eps:
+            return sample(legal_moves, 1)[0]
+        max_v = -2 ** 62
+        max_action = None
+        for move in legal_moves:
+            # simulate move:
+            sim_board = deepcopy(board)
+            sim_board.do(move, self.playerID)
+            encoded = VEncoding()(None, sim_board, phase, self.playerID)
+            q_val = self.net(encoded)
+            if q_val > max_v:
+                max_v = q_val
+                max_action = move
+        return max_action
