@@ -12,18 +12,18 @@ class SimpleBatcher:
 
     def __iter__(self):
         shuffeled_data = list(self.dataset)
-        while len(shuffeled_data)<self.batch_size:
+        while len(shuffeled_data) < self.batch_size:
             shuffeled_data += shuffeled_data
         random.shuffle(shuffeled_data)
-        mod = len(shuffeled_data)%self.batch_size
+        mod = len(shuffeled_data) % self.batch_size
         if mod != 0:
-            shuffeled_data += shuffeled_data[:self.batch_size-mod]
+            shuffeled_data += shuffeled_data[:self.batch_size - mod]
             random.shuffle(shuffeled_data)
         batched_points = []
         batch_size = self.batch_size
-        n = int(len(self.dataset)/batch_size)
+        n = int(len(self.dataset) / batch_size)
         for i in range(n):
-            batch_x = [p[0] for p in shuffeled_data[i*batch_size:(i+1)*batch_size]]
-            batch_y = [p[1] for p in shuffeled_data[i*batch_size:(i+1)*batch_size]]
+            batch_x = [p[0] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]
+            batch_y = [p[1] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]
             batched_points.append((np.array(batch_x).T, np.array(batch_y)))
         return iter(batched_points)
