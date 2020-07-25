@@ -6,3 +6,19 @@ class Move:
         self.type = move_type
         self.start = start
         self.end = end
+
+    def __eq__(self, other):
+        if not isinstance(other, Move):
+            return False
+        if self.type != other.type:
+            return False
+        if self.end != other.end:
+            return False
+        if self.type == "move" and self.start != other.start:
+            return False
+        return True
+
+    def __hash__(self):
+        if self.type == "move":
+            return hash((self.type, self.start, self.end))
+        return hash((self.type, self.end))
