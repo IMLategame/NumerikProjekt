@@ -219,8 +219,39 @@ class NonLinearLayer(ModuleI):
         return NonLinearLayer(fctn_dict[obj["non_linearity"]])
 
 
+class ResidualLayer(ModuleI):
+    def __init__(self, subnet: ModuleI):
+        super(ResidualLayer, self).__init__()
+        self.net = subnet
+
+    def feed_forward(self, x):
+        return x + self.net(x)
+
+    def backprop(self, delta_out):
+        return delta_out + self.net.backprop(delta_out)
+
+    def noFeatures(self):
+        return self.net.noFeatures()
+
+    def update(self, delta):
+        self.net.update(delta)
+
+    def getGradients(self):
+        return self.net.getGradients()
+
+    def toDict(self):
+        obj = super(ResidualLayer, self).toDict()
+        obj["subnet"] = self.net.toDict()
+        return obj
+
+    @classmethod
+    def dict2Mod(cls, obj):
+        return ResidualLayer(ModuleI.fromDict(obj["subnet"]))
+
+
 class_dict = {
     "FullyConnectedLayer": FullyConnectedLayer,
     "SequentialNetwork": SequentialNetwork,
-    "NonLinearLayer": NonLinearLayer
+    "NonLinearLayer": NonLinearLayer,
+    "ResidualLayer": ResidualLayer
 }
