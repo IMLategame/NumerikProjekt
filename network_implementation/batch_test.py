@@ -16,15 +16,14 @@ data = [[np.array((0, 0)), np.array(0)], [np.array((0, 1)), np.array(1)],
 
 
 net = FullyConnectedNet([2, 3, 1], nonLin=Sigmoid())
-#net = SequentialNetwork([FullyConnectedLayer(2, 3, Identity()), NonLinearLayer(Sigmoid()), FullyConnectedLayer(3, 1, Sigmoid())])
 criterion = BCELoss()  # L2Loss() #
 opt = Adam(net)  # SGD(net, 0.001) #
 epochs = 500000
 eval = 5000
 
-batcher = SimpleBatcher(4, data)
-for x,y in batcher:
-    print(x,y)
+batcher = SimpleBatcher(2, data)
+for x, y in batcher:
+    print(x, y)
 
 start = time.time()
 for epoch in range(epochs):
@@ -33,7 +32,7 @@ for epoch in range(epochs):
         loss, delta = criterion(out, y)
         net.backprop(delta)
         opt.take_step()
-    loss = sum([criterion(net(x), y)[0] for x, y in data])
+    loss = sum([criterion(net(x), y)[0][0][0] for x, y in data])
     if loss < 0.01:
         break
     if (epoch+1) % eval == 0:
