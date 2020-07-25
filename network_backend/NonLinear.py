@@ -19,7 +19,7 @@ class Sigmoid(NonLinearI):
         return 1/(1 + np.exp(-x))
 
     def d(self, x):
-        return x * (1-x) #self.call(x) * (1 - self.call(x))
+        return x * (1 - x)
 
 
 def elementWiseReLU(x):
@@ -60,9 +60,18 @@ class Tanh(NonLinearI):
         return 1-x*x
 
 
+class Softmax(NonLinearI):
+    def call(self, x):
+        return np.exp(x) / np.sum(np.exp(x), axis=0)
+
+    def d(self, x):
+        return x * (1 - x)
+
+
 fctn_dict = {
     "Sigmoid": Sigmoid,
     "ReLU": ReLU,
     "Identity": Identity,
-    "Tanh": Tanh
+    "Tanh": Tanh,
+    "Softmax": Softmax
 }
