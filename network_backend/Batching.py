@@ -27,3 +27,12 @@ class SimpleBatcher:
             batch_y = [p[1] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]
             batched_points.append((np.array(batch_x).T, np.array(batch_y)))
         return iter(batched_points)
+
+    def subset_percent(self, percent, batch_size=None):
+        assert 0 < percent and percent <= 1
+        shuffeled_data = list(self.dataset)
+        random.shuffle(shuffeled_data)
+        length = int(len(self) * percent)
+        if batch_size is None:
+            batch_size = self.batch_size
+        return SimpleBatcher(batch_size, shuffeled_data[: length])
