@@ -196,10 +196,11 @@ class NonLinearLayer(ModuleI):
         self.nonLin = non_linearity
 
     def feed_forward(self, x):
-        return self.nonLin(x)
+        self.y = self.nonLin(x)
+        return self.y
 
     def backprop(self, delta_out):
-        return self.nonLin.d(delta_out)
+        return self.nonLin.d(self.y) * delta_out
 
     def noFeatures(self):
         return 0
@@ -217,10 +218,10 @@ class NonLinearLayer(ModuleI):
 
     @classmethod
     def dict2Mod(cls, obj):
-        return NonLinearLayer(fctn_dict[obj["non_linearity"]])
+        return NonLinearLayer(fctn_dict[obj["non_linearity"]]())
 
 
-class ResidualLayer(ModuleI):
+"""class ResidualLayer(ModuleI):
     def __init__(self, subnet: ModuleI):
         super(ResidualLayer, self).__init__()
         self.net = subnet
@@ -229,7 +230,7 @@ class ResidualLayer(ModuleI):
         return x + self.net(x)
 
     def backprop(self, delta_out):
-        return delta_out + self.net.backprop(delta_out)
+        return self.net.backprop(delta_out) + delta_out
 
     def noFeatures(self):
         return self.net.noFeatures()
@@ -247,7 +248,7 @@ class ResidualLayer(ModuleI):
 
     @classmethod
     def dict2Mod(cls, obj):
-        return ResidualLayer(ModuleI.fromDict(obj["subnet"]))
+        return ResidualLayer(ModuleI.fromDict(obj["subnet"]))"""
 
 
 class SplitNonLinearLayer(ModuleI):
@@ -299,6 +300,6 @@ class_dict = {
     "FullyConnectedLayer": FullyConnectedLayer,
     "SequentialNetwork": SequentialNetwork,
     "NonLinearLayer": NonLinearLayer,
-    "ResidualLayer": ResidualLayer,
+    #"ResidualLayer": ResidualLayer,
     "SplitNonLinearLayer": SplitNonLinearLayer
 }
