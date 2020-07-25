@@ -1,5 +1,5 @@
 import numpy as np
-from network_backend.NonLinear import Sigmoid, NonLinearI, fctn_dict
+from network_backend.NonLinear import Sigmoid, NonLinearI, fctn_dict, Identity
 import json
 
 
@@ -127,16 +127,17 @@ class SequentialNetwork(ModuleI):
         return SequentialNetwork(layers)
 
 
-def FullyConnectedNet(sizes = None, nonLin = Sigmoid()):
+def FullyConnectedNet(sizes, nonLin=Sigmoid()):
     layers = []
     assert len(sizes) >= 2
     for size_in, size_out in zip(sizes[:-1], sizes[1:]):
-        layers.append(FullyConnectedLayer(size_in, size_out, nonLin))
+        layers.append(FullyConnectedLayer(size_in, size_out))
+        layers.append(NonLinearLayer(nonLin))
     return SequentialNetwork(layers)
 
 
 class FullyConnectedLayer(ModuleI):
-    def __init__(self, lay_in, lay_out, fctn=Sigmoid()):
+    def __init__(self, lay_in, lay_out, fctn=Identity()):
         super(FullyConnectedLayer, self).__init__()
         assert isinstance(fctn, NonLinearI)
         self.weights = np.random.normal(size=(lay_out, lay_in))
@@ -249,9 +250,55 @@ class ResidualLayer(ModuleI):
         return ResidualLayer(ModuleI.fromDict(obj["subnet"]))
 
 
+class SplitNonLinearLayer(ModuleI):
+    def __init__(self, sizes, non_linearities):
+        super(SplitNonLinearLayer, self).__init__()
+        self.sizes = sizes
+        self.non_linearities = non_linearities
+        self.split_sizes = [sum(self.sizes[:i+1]) for i in range(len(self.sizes))]
+        assert len(sizes) >= 1
+        assert len(sizes) == len(non_linearities)
+        for non_lin in non_linearities:
+            assert isinstance(non_lin, NonLinearI)
+
+    def feed_forward(self, x):
+        assert x.shape[0] == sum(self.sizes)
+        split_x = np.split(x, self.split_sizes, axis=0)
+        split_x = [non_lin(x_i) for x_i, non_lin in zip(split_x, self.non_linearities)]
+        return np.concatenate(split_x, axis=0)
+
+    def backprop(self, delta_out):
+        assert delta_out.shape[0] == sum(self.sizes)
+        delta_split = np.split(delta_out, self.split_sizes, axis=0)
+        delta_split = [non_lin.d(delta_i) for delta_i, non_lin in zip(delta_split, self.non_linearities)]
+        return np.concatenate(delta_split, axis=0)
+
+    def noFeatures(self):
+        return 0
+
+    def update(self, delta):
+        pass
+
+    def getGradients(self):
+        return []
+
+    def toDict(self):
+        obj = super(SplitNonLinearLayer, self).toDict()
+        obj["sizes"] = self.sizes
+        obj["non_linearities"] = [type(non_lin).__name__ for non_lin in self.non_linearities]
+        return obj
+
+    @classmethod
+    def dict2Mod(cls, obj):
+        sizes = obj["sizes"]
+        non_lins = [NonLinearLayer(fctn_dict[non_lin]) for non_lin in obj["non_linearities"]]
+        return SplitNonLinearLayer(sizes, non_lins)
+
+
 class_dict = {
     "FullyConnectedLayer": FullyConnectedLayer,
     "SequentialNetwork": SequentialNetwork,
     "NonLinearLayer": NonLinearLayer,
-    "ResidualLayer": ResidualLayer
+    "ResidualLayer": ResidualLayer,
+    "SplitNonLinearLayer": SplitNonLinearLayer
 }
