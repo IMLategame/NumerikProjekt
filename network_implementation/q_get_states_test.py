@@ -7,49 +7,84 @@ sys.path.insert(1, str(path))
 
 from network_backend.Loss import L2Loss
 from network_backend.NonLinear import Tanh
-from network_backend.Optimizers import Adam
+from network_backend.Optimizers import Adam, SGD
 from game.players import QNetPlayer, RandomPlayer
 from network_backend.reinforcement_learning.utils import ReplayMem
 from network_backend.reinforcement_learning.encodings import QEncoding
 from game.gamestate import Game
-from network_backend.Modules import FullyConnectedNet, ModuleI
+from network_backend.Modules import FullyConnectedNet, ModuleI, SequentialNetwork
 from network_backend.reinforcement_learning.rewardFunctions import SimpleReward
 from network_backend.reinforcement_learning.goalFunctions import QGoal
 from network_backend.Batching import SimpleBatcher
 
-net = FullyConnectedNet([103, 100, 50, 200, 50, 10, 1], nonLin=Tanh())
-#net = ModuleI.fromFile("networks/q_learning/morris_ep_200.net")
+net = SequentialNetwork([FullyConnectedNet([103, 100, 100, 100, 100, 100, 50, 50, 50, 50]), FullyConnectedNet([50, 10, 1], nonLin=Tanh())])
+#FullyConnectedNet([103, 100, 100, 100, 100, 50, 50, 50, 50, 10, 1], nonLin=Tanh())
+net = ModuleI.fromFile("networks/q_learning_10_layers_v2/morris_ep_1100.net")
 
 player0 = QNetPlayer(net, 0)
 player1 = QNetPlayer(net, 1)
-memory = ReplayMem(1000, 1, net, gamma=0.99, encode=QEncoding(), goal_value_function=QGoal())
+memory = ReplayMem(2000, 1, net, gamma=0.99, encode=QEncoding(), goal_value_function=QGoal())
 reward = SimpleReward(take_factor=10.0, penalty=0.01, win_reward=100.0)
 game = Game(run=False, p0=player0, p1=player1, mem=memory, reward=reward)
 
 opt = Adam(net)
 criterion = L2Loss()
+
+
 batch_size = 30
 epochs = 1000
 plt.axis([0, epochs, 0, 10])
 start = time.time()
-losses = []
-evaluation_epochs = 10
+save_epochs = 100
+evaluation_epochs = 25
 evaluation_games = 10
+offset = 1000
 assert epochs % evaluation_epochs == 0
-plt.axis([0, int(epochs/evaluation_epochs), 0, 1])
+
+fig, ax = plt.subplots(3)
+win_percentages = []
+losses_on_fixed_states = []
+avrg_q_fixed_states = []
+
+# collect set of states for observation of loss and q on fixed states:
+game.learn(0.1)
+avrg_q_batcher = SimpleBatcher(10, memory.get_data()[: min([len(memory), 50])])
+print("Got {} set states for evaluation".format(len(avrg_q_batcher)))
+
 for epoch in range(epochs):
-    if epoch % epochs == 0:
-        with open("networks/q_learning/morris_ep_{}.net".format(epoch), "w+") as f:
+    epoch += offset
+    if epoch % save_epochs == 0:
+        with open("networks/q_learning_10_layers_v2/morris_ep_{}.net".format(epoch), "w+") as f:
             net.toFile(f)
     print("Epoch {}".format(epoch))
     n = game.learn(0.1)
     print("\tPlayed for {} steps".format(n))
     batcher = SimpleBatcher(batch_size, memory.get_data())
-    for x, y in batcher:
-        out = net(x)
-        loss, delta = criterion(out, y)
-        net.backprop(delta)
-        opt.take_step()
+    test_batcher = batcher.subset_percent(0.1)
+
+    # Learn until no improvements are made
+    i = 0
+    learning = True
+    last_loss = float("inf")
+    while learning:
+        for x, y in batcher:
+            out = net(x)
+            loss, delta = criterion(out, y)
+            net.backprop(delta)
+            opt.take_step()
+
+        test_loss = 0
+        for x, y in test_batcher:
+            loss, _ = criterion(net(x), y)
+            test_loss += sum(loss)/len(loss)
+        test_loss = test_loss/len(test_batcher)
+        if test_loss > last_loss:
+            learning = False
+        last_loss = test_loss
+        i += 1
+    print("\tLearned for {} epochs".format(i))
+    print("\tFinal test loss = {}".format(test_loss))
+
     # Evaluation and plotting:
     if epoch % evaluation_epochs == 0:
         print("Evaluating")
@@ -66,11 +101,36 @@ for epoch in range(epochs):
                 wins += 1
         win_percent = wins/(2 * evaluation_games)
         print("\tWon {}% of games".format(win_percent * 100))
-        plt.scatter(int(epoch/evaluation_epochs), win_percent)
+        win_percentages.append(win_percent)
+        ax[0].clear()
+        ax[0].plot(range(len(win_percentages)), win_percentages)
+        ax[0].set_title("Win %")
+
+        batch_avrg_loss = 0
+        avrg_q = 0
+        for x, y in avrg_q_batcher:
+            q = net(x)
+            loss, _ = criterion(q, y)
+            batch_avrg_loss += sum(loss)/len(loss)
+            avrg_q += sum(q)/len(q)
+        batch_avrg_loss = batch_avrg_loss/len(avrg_q_batcher)
+        print("\tAvrg loss = {}".format(batch_avrg_loss))
+        losses_on_fixed_states.append(batch_avrg_loss)
+        avrg_q = sum(avrg_q)/(len(avrg_q_batcher)*len(avrg_q))
+        print("\tAvrg q = {}".format(avrg_q))
+        avrg_q_fixed_states.append(avrg_q)
+        ax[1].clear()
+        ax[1].plot(range(len(losses_on_fixed_states)), losses_on_fixed_states)
+        ax[1].set_title("Avrg loss on fixed States")
+        ax[2].clear()
+        ax[2].plot(range(len(avrg_q_fixed_states)), avrg_q_fixed_states)
+        ax[2].set_title("Avrg Q on fixed states")
         plt.pause(0.05)
 end = time.time()
 time_diff = end-start
 print("Trained for \n\t {} s \n \t {} epochs\n \t {} s/epoch".format(time_diff, epoch+1, time_diff/(epoch+1)))
 
-with open("networks/q_learning/morris.net", "w+") as f:
+with open("networks/q_learning_10_layers_v2/morris.net", "w+") as f:
     net.toFile(f)
+
+plt.show()
