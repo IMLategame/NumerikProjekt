@@ -286,3 +286,23 @@ class Board:
     def clear(self):
         self.board_state = [[[None if x == 1 and y == 1 else self.player_map[-1] for y in range(3)]
                              for x in range(3)] for ring in range(3)]
+
+    def __eq__(self, other):
+        if not isinstance(other, Board):
+            return False
+        if self.player_map[-1] != other.player_map[-1]:
+            return False
+        if self.player_map[1] != other.player_map[1]:
+            return False
+        if self.player_map[0] != other.player_map[0]:
+            return False
+        for x in range(3):
+            for y in range(3):
+                if x == 1 and y == 1:
+                    continue
+                for r in range(3):
+                    if other[r, x, y] != self[r, x, y]:
+                        return False
+
+    def __hash__(self):
+        return hash((str(self.player_map), str(self.board_state)))
