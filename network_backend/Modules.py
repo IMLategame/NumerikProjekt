@@ -139,7 +139,7 @@ def FullyConnectedNet(sizes, nonLin=Sigmoid()):
 class LinearLayer(ModuleI):
     def __init__(self, lay_in, lay_out):
         super(LinearLayer, self).__init__()
-        self.weights = np.random.normal(loc=1.0, scale=0.3, size=(lay_out, lay_in))
+        self.weights = np.random.normal(loc=0.0, scale=0.3, size=(lay_out, lay_in))
         self.bias = np.zeros(lay_out)
         self.lay_in = lay_in
         self.lay_out = lay_out
@@ -294,7 +294,7 @@ class SplitNonLinearLayer(ModuleI):
 
 
 class_dict = {
-    "FullyConnectedLayer": LinearLayer,
+    "LinearLayer": LinearLayer,
     "SequentialNetwork": SequentialNetwork,
     "NonLinearLayer": NonLinearLayer,
     #"ResidualLayer": ResidualLayer,

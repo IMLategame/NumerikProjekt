@@ -9,22 +9,22 @@ path = pathlib.Path().absolute()
 sys.path.insert(1, str(path))
 
 from network_backend.Loss import L2Loss
-from network_backend.NonLinear import Tanh
+from network_backend.NonLinear import Tanh, ReLU
 from network_backend.Optimizers import Adam, SGD
-from game.players import QNetPlayer, RandomPlayer
+from NineMenMorris.players import QNetPlayer, RandomPlayer
 from network_backend.reinforcement_learning.utils import ReplayMem
 from network_backend.reinforcement_learning.encodings import QEncoding
-from game.gamestate import Game
+from NineMenMorris.gamestate import Game
 from network_backend.Modules import FullyConnectedNet, ModuleI, SequentialNetwork, LinearLayer
 from network_backend.reinforcement_learning.rewardFunctions import SimpleReward
 from network_backend.reinforcement_learning.goalFunctions import QGoal
 from network_backend.Batching import SimpleBatcher
 
-net = SequentialNetwork([FullyConnectedNet([103, 100, 100, 50, 50, 10]),
+net = SequentialNetwork([FullyConnectedNet([103, 100, 100, 50, 50, 10], nonLin=ReLU()),
                          LinearLayer(10, 1)])
 folder = "networks/q_learning_gamma_0_9_ReLU/"
-load_saved_version = False
-offset = 0
+load_saved_version = True
+offset = 100
 
 if load_saved_version:
     list_of_files = glob.glob(folder+"*.net")
@@ -106,13 +106,17 @@ for epoch in range(epochs):
         wins = 0
         g = Game(p0=player0, p1=RandomPlayer(1 - player0.playerID), run=False)
         for _ in range(evaluation_games):
-            g.play()
-            if g.winner.playerID == player0.playerID:
+            g.play(max_moves=1000)
+            if g.winner is None:
+                wins += 0.5
+            elif g.winner.playerID == player0.playerID:
                 wins += 1
         g = Game(p0=RandomPlayer(1 - player1.playerID), p1=player1, run=False)
         for _ in range(evaluation_games):
-            g.play()
-            if g.winner.playerID == player1.playerID:
+            g.play(max_moves=1000)
+            if g.winner is None:
+                wins += 0.5
+            elif g.winner.playerID == player1.playerID:
                 wins += 1
         win_percent = wins/(2 * evaluation_games)
         print("\tWon {}% of games".format(win_percent * 100))

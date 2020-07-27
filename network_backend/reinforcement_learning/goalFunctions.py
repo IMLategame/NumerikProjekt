@@ -1,5 +1,5 @@
 from network_backend.reinforcement_learning.encodings import EncodingI
-from game.moves import Move
+from NineMenMorris.moves import Move
 
 
 class GoalFunctionI:
@@ -11,8 +11,8 @@ class GoalFunctionI:
 
 
 class QGoal(GoalFunctionI):
-    def call(self, net, encoding: EncodingI, gamma, prev, phase_prev, a: Move, r, post, phase_post, turn_player):
-        if post.is_terminal(phase_post, turn_player):
+    def call(self, net, encoding: EncodingI, gamma, prev, phase_prev, a, r, post, phase_post, turn_player):
+        if post.is_terminal(phase=phase_post, player=turn_player):
             return r
         max_Q = -2**62
         legal = post.legal_moves(phase_post, turn_player)

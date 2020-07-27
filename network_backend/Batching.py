@@ -21,7 +21,7 @@ class SimpleBatcher:
             random.shuffle(shuffeled_data)
         batched_points = []
         batch_size = self.batch_size
-        n = int(len(self.dataset) / batch_size)
+        n = int(len(shuffeled_data) / batch_size)
         for i in range(n):
             batch_x = [p[0] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]
             batch_y = [p[1] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]

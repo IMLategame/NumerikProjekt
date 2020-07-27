@@ -71,6 +71,7 @@ pygame.draw.circle(dispbrett, schwarz, (500, 500), 5)
 #       ... verknupfen mit class PlayerI?
 #
 #    def move(self):
+#
 #       raise raise NotImplementedError()  
 #       ... verknupfen mit getMove?      
         

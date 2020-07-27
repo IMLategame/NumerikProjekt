@@ -11,10 +11,10 @@ sys.path.insert(1, str(path))
 from network_backend.Loss import L2Loss
 from network_backend.NonLinear import Tanh
 from network_backend.Optimizers import Adam, SGD
-from game.players import VNetPlayer, RandomPlayer
+from NineMenMorris.players import VNetPlayer, RandomPlayer
 from network_backend.reinforcement_learning.utils import ReplayMem
 from network_backend.reinforcement_learning.encodings import VEncoding
-from game.gamestate import Game
+from NineMenMorris.gamestate import Game
 from network_backend.Modules import FullyConnectedNet, ModuleI, SequentialNetwork, LinearLayer
 from network_backend.reinforcement_learning.rewardFunctions import SimpleReward
 from network_backend.reinforcement_learning.goalFunctions import VGoal
