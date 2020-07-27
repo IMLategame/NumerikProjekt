@@ -195,3 +195,5 @@ class Game:
         else:
             self.p1.win()
             self.winner = self.p1
+        self.p0.end(self.board)
+        self.p1.end(self.board)

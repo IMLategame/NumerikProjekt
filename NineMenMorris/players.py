@@ -28,6 +28,10 @@ class PlayerI:
     def win(self):
         print("Player {}: I won :)".format(self.playerID))
 
+    # Called when the game has ended.
+    def end(self, board: Board):
+        pass
+
 
 # Just parsing a string with some (>= 3) numbers in it to the numbers (only the first 3)
 def parse_point(string):
