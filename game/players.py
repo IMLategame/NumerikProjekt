@@ -209,6 +209,9 @@ class VNetPlayer(NetPlayerI):
                 max_action = move
         return max_action
 
+    def win(self):
+        pass
+
 
 class RandomPlayer(PlayerI):
     """
