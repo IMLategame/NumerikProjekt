@@ -137,12 +137,10 @@ def FullyConnectedNet(sizes, nonLin=Sigmoid()):
 
 
 class LinearLayer(ModuleI):
-    def __init__(self, lay_in, lay_out, fctn=Identity()):
+    def __init__(self, lay_in, lay_out):
         super(LinearLayer, self).__init__()
-        assert isinstance(fctn, NonLinearI)
         self.weights = np.random.normal(loc=1.0, scale=0.3, size=(lay_out, lay_in))
         self.bias = np.zeros(lay_out)
-        self.fctn = fctn
         self.lay_in = lay_in
         self.lay_out = lay_out
 
@@ -151,10 +149,10 @@ class LinearLayer(ModuleI):
             x = x.reshape((x.shape[0], 1))
         self.x = x
         z = self.weights @ x + self.bias[:, np.newaxis]
-        return self.fctn(z)
+        return z
 
     def backprop(self, delta_out):
-        delta_in = self.fctn.d(self.x) * (self.weights.T @ delta_out)
+        delta_in = self.weights.T @ delta_out
         self.der_b = delta_out
         self.der_w = delta_out @ self.x.T
         return delta_in
@@ -178,12 +176,11 @@ class LinearLayer(ModuleI):
         obj["lay_out"] = self.lay_out
         obj["weights"] = self.weights.tolist()
         obj["bias"] = self.bias.tolist()
-        obj["non_linearity"] = type(self.fctn).__name__
         return obj
 
     @classmethod
     def dict2Mod(cls, obj):
-        layer = LinearLayer(obj["lay_in"], obj["lay_out"], fctn=fctn_dict[obj["non_linearity"]]())
+        layer = LinearLayer(obj["lay_in"], obj["lay_out"])
         layer.weights = np.array(obj["weights"])
         layer.bias = np.array(obj["bias"])
         return layer
