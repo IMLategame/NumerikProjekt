@@ -10,6 +10,7 @@ class PlayerI:
         Interface for Players.
         Subclass this to create a new player (something that plays the NineMenMorris :) )
     """
+
     def __init__(self, playerID=0):
         # Player has an ID that is either 0 or 1
         if playerID in ["a", "b"]:
@@ -51,7 +52,7 @@ class CmdPlayer(PlayerI):
             print("Whats your move? (move is an int in [0, 8]).")
             move_string = input("->")
             try:
-                move = int(move_string)#
+                move = int(move_string)  #
                 if board.is_legal(move, self.playerID):
                     return move
             except:
@@ -63,6 +64,7 @@ class QNetPlayer(NetPlayerI):
         This player gets a net for dimensions
         net: R^27 -> R
     """
+
     def __init__(self, net, playerID=0):
         super(QNetPlayer, self).__init__(net, playerID)
         self.moves = 0
@@ -76,7 +78,7 @@ class QNetPlayer(NetPlayerI):
         if random() < eps:
             self.rand += 1
             return sample(legal_moves, 1)[0]
-        max_q = -2**62
+        max_q = -2 ** 62
         max_action = None
         for move in legal_moves:
             encoded = TTTQEncoding()(move, board, None, self.playerID)
@@ -94,6 +96,7 @@ class RandomPlayer(PlayerI):
     """
         This player just does random moves only. Used for evaluation.
     """
+
     def __init__(self, playerID=0):
         super(RandomPlayer, self).__init__(playerID)
 
@@ -115,17 +118,16 @@ class VisualPlayer(PlayerI):
     """
         This player draws the board in a separate window using pygame.
     """
-    def __init__(self, playerID=0, size=200):
+    def __init__(self, playerID=0, size=300):
         super(VisualPlayer, self).__init__(playerID)
         pg.init()
         pg.font.init()
-        self.font = pg.font.SysFont("Comic Sans MS", 50)
-        self.clock = pg.time.Clock()
+        self.font = pg.font.SysFont("Comic Sans MS", 90)
         self.size = size
         self.delta = 10
         self.screen = pg.display.set_mode((size, size))
         self.x_offset = 15
-        self.y_offset = -5
+        self.y_offset = -18
         pg.display.set_caption("Tic Tac Toe")
         pg.mouse.set_visible(True)
 
@@ -133,13 +135,13 @@ class VisualPlayer(PlayerI):
         self.screen.fill(WHITE)
         for i in range(2):
             i += 1
-            pg.draw.line(self.screen, BLACK, (0, i * self.size/3.0), (self.size, i*self.size/3.0))
-            pg.draw.line(self.screen, BLACK, (i * self.size/3.0, 0), (i*self.size/3.0, self.size))
+            pg.draw.line(self.screen, BLACK, (0, i * self.size / 3.0), (self.size, i * self.size / 3.0))
+            pg.draw.line(self.screen, BLACK, (i * self.size / 3.0, 0), (i * self.size / 3.0, self.size))
         for x in range(3):
             for y in range(3):
-                if board[x + 3*y] != board.player_map[-1]:
-                    text = self.font.render(board[x + 3*y].capitalize(), False, BLACK)
-                    self.screen.blit(text, (self.size/3.0*x+self.x_offset, self.size/3.0*y+self.y_offset))
+                if board[x + 3 * y] != board.player_map[-1]:
+                    text = self.font.render(board[x + 3 * y].capitalize(), False, BLACK)
+                    self.screen.blit(text, (self.size / 3.0 * x + self.x_offset, self.size / 3.0 * y + self.y_offset))
         pg.display.flip()
 
     def get_move(self, board: Board):
@@ -156,17 +158,19 @@ class VisualPlayer(PlayerI):
                     click_start_pos = pg.mouse.get_pos()
                 if event.type == pg.MOUSEBUTTONUP:
                     click_end_pos = pg.mouse.get_pos()
-                    click_dist = abs(click_start_pos[0] - click_end_pos[0])**2 \
-                                 + abs(click_start_pos[1] - click_end_pos[1])**2
-                    if click_dist < self.delta**2:
+                    if click_start_pos is None:
+                        continue
+                    click_dist = abs(click_start_pos[0] - click_end_pos[0]) ** 2 \
+                        + abs(click_start_pos[1] - click_end_pos[1]) ** 2
+                    if click_dist < self.delta ** 2:
                         # get x val:
                         for x in range(3):
-                            if click_start_pos[0] - self.delta >= self.size/3.0 * x \
-                                    and click_start_pos[0] + self.delta <= self.size/3.0 * (x+1):
+                            if click_start_pos[0] - self.delta >= self.size / 3.0 * x \
+                                    and click_start_pos[0] + self.delta <= self.size / 3.0 * (x + 1):
                                 for y in range(3):
                                     if click_start_pos[1] - self.delta >= self.size / 3.0 * y \
                                             and click_start_pos[1] + self.delta <= self.size / 3.0 * (y + 1):
-                                        return 3*y+x
+                                        return 3 * y + x
 
     def end(self, board):
         self.draw_board(board)
