@@ -140,7 +140,7 @@ class QNetPlayer(NetPlayerI):
         max_action = None
         for move in legal_moves:
             encoded = QEncoding()(move, board, phase, self.playerID)
-            q_val = self.net(encoded)
+            q_val = self.net(encoded)[0][0]
             if q_val > max_q:
                 max_q = q_val
                 max_action = move
@@ -203,7 +203,7 @@ class VNetPlayer(NetPlayerI):
             sim_board = deepcopy(board)
             sim_board.do(move, self.playerID)
             encoded = VEncoding()(None, sim_board, phase, self.playerID)
-            q_val = self.net(encoded)
+            q_val = self.net(encoded)[0][0]
             if q_val > max_v:
                 max_v = q_val
                 max_action = move
