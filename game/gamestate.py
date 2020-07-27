@@ -39,7 +39,7 @@ class Game:
         self.board.do(move, player.playerID)
         return move
 
-    def learn(self, eps=0.1):
+    def learn(self, eps=0.1, max_steps=300):
         assert self.mem is not None
         assert isinstance(self.p0, NetPlayerI) or isinstance(self.p1, NetPlayerI)
         self.board.clear()
@@ -74,7 +74,9 @@ class Game:
             moves += 2
         # move phase
         while len(self.board.get_player_pos(self.p0.playerID)) > 2 and len(
-                self.board.get_player_pos(self.p1.playerID)) > 2 and len(self.board.legal_moves("move", self.p0.playerID)) > 0:
+                self.board.get_player_pos(self.p1.playerID)) > 2 \
+                and len(self.board.legal_moves("move", self.p0.playerID)) > 0\
+                and moves < max_steps:
             # p0
             if len(self.board.get_player_pos(self.p0.playerID)) == 3:
                 move = self.get_and_do_move(self.p0, "jump", eps)

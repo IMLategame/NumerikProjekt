@@ -131,16 +131,16 @@ def FullyConnectedNet(sizes, nonLin=Sigmoid()):
     layers = []
     assert len(sizes) >= 2
     for size_in, size_out in zip(sizes[:-1], sizes[1:]):
-        layers.append(FullyConnectedLayer(size_in, size_out))
+        layers.append(LinearLayer(size_in, size_out))
         layers.append(NonLinearLayer(nonLin))
     return SequentialNetwork(layers)
 
 
-class FullyConnectedLayer(ModuleI):
+class LinearLayer(ModuleI):
     def __init__(self, lay_in, lay_out, fctn=Identity()):
-        super(FullyConnectedLayer, self).__init__()
+        super(LinearLayer, self).__init__()
         assert isinstance(fctn, NonLinearI)
-        self.weights = np.random.normal(size=(lay_out, lay_in))
+        self.weights = np.random.normal(loc=1.0, scale=0.3, size=(lay_out, lay_in))
         self.bias = np.zeros(lay_out)
         self.fctn = fctn
         self.lay_in = lay_in
@@ -173,7 +173,7 @@ class FullyConnectedLayer(ModuleI):
         return [self.der_w, self.der_b]
 
     def toDict(self):
-        obj = super(FullyConnectedLayer, self).toDict()
+        obj = super(LinearLayer, self).toDict()
         obj["lay_in"] = self.lay_in
         obj["lay_out"] = self.lay_out
         obj["weights"] = self.weights.tolist()
@@ -183,7 +183,7 @@ class FullyConnectedLayer(ModuleI):
 
     @classmethod
     def dict2Mod(cls, obj):
-        layer = FullyConnectedLayer(obj["lay_in"], obj["lay_out"], fctn=fctn_dict[obj["non_linearity"]]())
+        layer = LinearLayer(obj["lay_in"], obj["lay_out"], fctn=fctn_dict[obj["non_linearity"]]())
         layer.weights = np.array(obj["weights"])
         layer.bias = np.array(obj["bias"])
         return layer
@@ -297,7 +297,7 @@ class SplitNonLinearLayer(ModuleI):
 
 
 class_dict = {
-    "FullyConnectedLayer": FullyConnectedLayer,
+    "FullyConnectedLayer": LinearLayer,
     "SequentialNetwork": SequentialNetwork,
     "NonLinearLayer": NonLinearLayer,
     #"ResidualLayer": ResidualLayer,
