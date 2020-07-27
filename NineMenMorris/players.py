@@ -1,9 +1,12 @@
+from pygame.rect import Rect
+
 from NineMenMorris.board import Board
 from NineMenMorris.moves import Move
 from network_backend.reinforcement_learning.encodings import QEncoding, VEncoding
 import re
 from random import random, sample
 from copy import deepcopy
+import pygame as pg
 
 
 class PlayerI:
@@ -11,6 +14,7 @@ class PlayerI:
         Interface for Players.
         Subclass this to create a new player (something that plays the NineMenMorris :) )
     """
+
     def __init__(self, playerID=0):
         # Player has an ID that is either 0 or 1
         if playerID in ["a", "b"]:
@@ -35,8 +39,8 @@ class PlayerI:
 
 # Just parsing a string with some (>= 3) numbers in it to the numbers (only the first 3)
 def parse_point(string):
-    #print("point stuff:")
-    #print([int(s) for s in re.findall(r'\d+', string)])
+    # print("point stuff:")
+    # print([int(s) for s in re.findall(r'\d+', string)])
     r, x, y = [int(s) for s in re.findall(r'\d+', string)][:3]
     return r, x, y
 
@@ -45,6 +49,7 @@ class CmdPlayer(PlayerI):
     """
         The first and most simple implementation of a player. Just asks the user what to do on the command line.
     """
+
     def __init__(self, playerID=0):
         # Call this first in your implementations of the player also.
         super().__init__(playerID)
@@ -221,6 +226,7 @@ class RandomPlayer(PlayerI):
     """
     This player just does random moves only. Used for evaluation.
     """
+
     def __init__(self, playerID=0):
         super(RandomPlayer, self).__init__(playerID)
 
@@ -232,3 +238,109 @@ class RandomPlayer(PlayerI):
 
     def win(self):
         pass
+
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+LIGHT_GREY = (230, 230, 230)
+
+
+class VisualPlayer(PlayerI):
+    """
+        This player draws the board for easier interaction.
+    """
+
+    def __init__(self, playerID=0):
+        super(VisualPlayer, self).__init__(playerID)
+        pg.init()
+        pg.font.init()
+        self.box_size = 50
+        self.spacing = 25
+        self.font = pg.font.SysFont("Comic Sanse MS", int(self.box_size * 0.95))
+        self.screen = pg.display.set_mode((7 * self.box_size + 6 * self.spacing, 7 * self.box_size + 6 * self.spacing))
+        self.x_offset = 7
+        self.y_offset = -9
+        self.box_list = []
+        pg.display.set_caption("Nine Men Morris")
+        pg.mouse.set_visible(True)
+
+    def draw_board(self, board: Board):
+        self.screen.fill(WHITE)
+        self.box_list = []
+        for x in range(3):
+            for y in range(3):
+                if x == 1 and y == 1:
+                    continue
+                for r in range(3):
+                    if x == 0:
+                        x_coord = r * (self.box_size + self.spacing)
+                    elif x == 1:
+                        x_coord = 3 * (self.box_size + self.spacing)
+                    elif x == 2:
+                        x_coord = (6 - r) * (self.box_size + self.spacing)
+                    if y == 0:
+                        y_coord = r * (self.box_size + self.spacing)
+                    elif y == 1:
+                        y_coord = 3 * (self.box_size + self.spacing)
+                    elif y == 2:
+                        y_coord = (6 - r) * (self.box_size + self.spacing)
+                    # draw boxes
+                    pg.draw.rect(self.screen, LIGHT_GREY, Rect(x_coord, y_coord, self.box_size, self.box_size))
+                    # draw text in boxes
+                    if board[r, x, y] != board.player_map[-1]:
+                        text = self.font.render(board.string_rep[board[r, x, y]], False, BLACK)
+                        self.screen.blit(text, (x_coord, y_coord))
+                    self.box_list.append(((x_coord, y_coord), r, x, y))
+                    # draw lines to the right
+                    if x < 2:
+                        line_start_x_coord = x_coord + self.box_size
+                        line_start_y_coord = y_coord + self.box_size / 2.0
+                        line_end_x_coord = line_start_x_coord + (2-r) * (self.box_size + self.spacing) + self.spacing
+                        line_end_y_coord = line_start_y_coord
+                        pg.draw.line(self.screen, BLACK, (line_start_x_coord, line_start_y_coord),
+                                     (line_end_x_coord, line_start_y_coord))
+                    # draw lines to the bottom
+                    if y < 2:
+                        line_start_x_coord = x_coord + self.box_size / 2.0
+                        line_start_y_coord = y_coord + self.box_size
+                        line_end_y_coord = line_start_y_coord + (2-r) * (self.box_size + self.spacing) + self.spacing
+                        line_end_x_coord = line_start_x_coord
+                        pg.draw.line(self.screen, BLACK, (line_start_x_coord, line_start_y_coord),
+                                     (line_end_x_coord, line_end_y_coord))
+        pg.display.flip()
+
+    def get_move(self, phase, board: Board):
+        self.draw_board(board)
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                return None
+        click_start_pos = None
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return None
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    click_start_pos = pg.mouse.get_pos()
+                if event.type == pg.MOUSEBUTTONUP:
+                    click_end_pos = pg.mouse.get_pos()
+                    if click_start_pos is None:
+                        continue
+                    click_end_coord = None
+                    for (box_x, box_y), r, x, y in self.box_list:
+                        if box_x <= click_end_pos[0] <= box_x + self.box_size \
+                                and box_y <= click_end_pos[1] <= box_y + self.box_size:
+                            click_end_coord = (r, x, y)
+                    if click_end_coord is None:
+                        continue
+                    if phase == "set":
+                        return Move("set", click_end_coord)
+                    if phase == "take":
+                        return Move("take", click_end_coord)
+                    click_start_coord = None
+                    for (box_x, box_y), r, x, y in self.box_list:
+                        if box_x <= click_start_pos[0] <= box_x + self.box_size \
+                                and box_y <= click_start_pos[1] <= box_y + self.box_size:
+                            click_start_coord = (r, x, y)
+                    if click_start_coord is None:
+                        continue
+                    return Move("move", click_end_coord, click_start_coord)
