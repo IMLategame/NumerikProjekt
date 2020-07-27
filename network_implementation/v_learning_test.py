@@ -11,18 +11,18 @@ sys.path.insert(1, str(path))
 from network_backend.Loss import L2Loss
 from network_backend.NonLinear import Tanh
 from network_backend.Optimizers import Adam, SGD
-from game.players import QNetPlayer, RandomPlayer
+from game.players import VNetPlayer, RandomPlayer
 from network_backend.reinforcement_learning.utils import ReplayMem
-from network_backend.reinforcement_learning.encodings import QEncoding
+from network_backend.reinforcement_learning.encodings import VEncoding
 from game.gamestate import Game
 from network_backend.Modules import FullyConnectedNet, ModuleI, SequentialNetwork, LinearLayer
 from network_backend.reinforcement_learning.rewardFunctions import SimpleReward
-from network_backend.reinforcement_learning.goalFunctions import QGoal
+from network_backend.reinforcement_learning.goalFunctions import VGoal
 from network_backend.Batching import SimpleBatcher
 
-net = SequentialNetwork([FullyConnectedNet([103, 100, 100, 50, 50, 10]),
+net = SequentialNetwork([FullyConnectedNet([52, 100, 50, 50, 10]),
                          LinearLayer(10, 1)])
-folder = "networks/q_learning_gamma_0_9_ReLU/"
+folder = "networks/v_learning/"
 load_saved_version = False
 offset = 0
 
@@ -31,18 +31,18 @@ if load_saved_version:
     latest_file = max(list_of_files, key=os.path.getctime)
     net = ModuleI.fromFile(latest_file)
 
-player0 = QNetPlayer(net, 0)
-player1 = QNetPlayer(net, 1)
-memory = ReplayMem(2000, 1, net, gamma=0.9, encode=QEncoding(), goal_value_function=QGoal())
+player0 = VNetPlayer(net, 0)
+player1 = VNetPlayer(net, 1)
+memory = ReplayMem(2000, 1, net, gamma=0.9, encode=VEncoding(), goal_value_function=VGoal())
 reward = SimpleReward(take_factor=10.0, penalty=0.01, win_reward=100.0)
 game = Game(run=False, p0=player0, p1=player1, mem=memory, reward=reward)
 
-opt = Adam(net, alpha=0.0001, beta_1=0.9, beta_2=0.999, eps=10e-8)
+opt = Adam(net)
 criterion = L2Loss()
 
 
 batch_size = 30
-epochs = 3000
+epochs = 10000
 plt.axis([0, epochs, 0, 10])
 start = time.time()
 save_epochs = 100
@@ -52,7 +52,7 @@ assert epochs % evaluation_epochs == 0
 eval_set_size = 50
 max_learning_epochs_per_play_epoch = 10
 
-fig, ax = plt.subplots(2)
+fig, ax = plt.subplots(3)
 win_percentages = []
 losses_on_fixed_states = []
 avrg_q_fixed_states = []
@@ -62,7 +62,7 @@ game.learn(0.1)
 test_data = memory.get_current_mem()
 random.shuffle(test_data)
 test_data = test_data[: min([len(test_data), eval_set_size])]
-eval_mem = ReplayMem(2000, 1, net, gamma=0.99, encode=QEncoding(), goal_value_function=QGoal())
+eval_mem = ReplayMem(2000, 1, net, gamma=0.99, encode=VEncoding(), goal_value_function=VGoal())
 eval_mem.mem = test_data
 print("Got {} set states for evaluation".format(len(test_data)))
 
@@ -72,7 +72,7 @@ for epoch in range(epochs):
         with open(folder + "morris_ep_{}.net".format(epoch), "w+") as f:
             net.toFile(f)
     print("Epoch {}".format(epoch))
-    n = game.learn(0.05)
+    n = game.learn(0.1)
     print("\tPlayed for {} steps".format(n))
     batcher = SimpleBatcher(batch_size, memory.get_data())
     test_batcher = batcher.subset_percent(0.1)
@@ -122,18 +122,26 @@ for epoch in range(epochs):
         ax[0].plot(range(len(win_percentages)), win_percentages)
         ax[0].set_title("Win %")
 
+        batch_avrg_loss = 0
         avrg_q = 0
         for x, y in avrg_q_batcher:
             q = net(x)
             loss, _ = criterion(q, y)
+            batch_avrg_loss += sum(loss)/len(loss)
             avrg_q += sum(q)/len(q)
+        batch_avrg_loss = batch_avrg_loss/len(avrg_q_batcher)
+        print("\tAvrg loss = {}".format(batch_avrg_loss))
+        losses_on_fixed_states.append(batch_avrg_loss)
         avrg_q = sum(avrg_q)/(len(avrg_q_batcher)*len(avrg_q))
         print("\tAvrg q = {}".format(avrg_q))
         avrg_q_fixed_states.append(avrg_q)
         ax[1].clear()
-        ax[1].plot(range(len(avrg_q_fixed_states)), avrg_q_fixed_states)
-        ax[1].set_title("Avrg Q on fixed states")
-        plt.pause(0.001)
+        ax[1].plot(range(len(losses_on_fixed_states)), losses_on_fixed_states)
+        ax[1].set_title("Avrg loss on fixed States")
+        ax[2].clear()
+        ax[2].plot(range(len(avrg_q_fixed_states)), avrg_q_fixed_states)
+        ax[2].set_title("Avrg Q on fixed states")
+        plt.pause(0.1)
         plt.draw()
 end = time.time()
 time_diff = end-start

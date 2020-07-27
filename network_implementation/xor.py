@@ -3,7 +3,7 @@ import pathlib, sys
 path = pathlib.Path().absolute()
 sys.path.insert(1, str(path))
 
-from network_backend.Modules import ModuleI, FullyConnectedNet, SequentialNetwork, FullyConnectedLayer, NonLinearLayer
+from network_backend.Modules import ModuleI, FullyConnectedNet, SequentialNetwork, LinearLayer, NonLinearLayer
 from network_backend.Loss import BCELoss, L2Loss
 from network_backend.Optimizers import SGD, Adam
 from network_backend.NonLinear import ReLU, Sigmoid, Identity, Tanh

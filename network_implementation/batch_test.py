@@ -3,7 +3,7 @@ import pathlib, sys
 path = pathlib.Path().absolute()
 sys.path.insert(1, str(path))
 
-from network_backend.Modules import ModuleI, FullyConnectedNet, SequentialNetwork, FullyConnectedLayer, NonLinearLayer
+from network_backend.Modules import ModuleI, FullyConnectedNet, SequentialNetwork, LinearLayer, NonLinearLayer
 from network_backend.Loss import BCELoss, L2Loss
 from network_backend.Optimizers import SGD, Adam
 from network_backend.NonLinear import ReLU, Sigmoid, Identity, Tanh
@@ -15,7 +15,7 @@ data = [[np.array((0, 0)), np.array(0)], [np.array((0, 1)), np.array(1)],
         [np.array((1, 0)), np.array(1)], [np.array((1, 1)), np.array(0)]]
 
 
-net = FullyConnectedNet([2, 3, 1], nonLin=Sigmoid())
+net = SequentialNetwork([FullyConnectedNet([2, 3], nonLin=ReLU()), FullyConnectedNet([3, 1])])
 criterion = BCELoss()  # L2Loss() #
 opt = Adam(net)  # SGD(net, 0.001) #
 epochs = 500000
