@@ -24,7 +24,7 @@ from network_backend.reinforcement_learning.goalFunctions import QGoal
 from network_backend.Batching import SimpleBatcher
 
 net = FullyConnectedNet([27, 27, 27, 1], nonLin=Tanh())
-folder = "networks/ttt_q_learning/"
+folder = "networks/ttt_q_learning_param_study/"
 load_saved_version = False
 offset = 0
 
@@ -51,7 +51,7 @@ evaluation_epochs = 100
 evaluation_games = 100
 assert epochs % evaluation_epochs == 0
 eval_set_size = 50
-max_learning_epochs_per_play_epoch = 1
+max_learning_epochs_per_play_epoch = 10
 
 fig, ax = plt.subplots(2)
 win_percentages = []

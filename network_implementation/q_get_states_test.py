@@ -22,9 +22,9 @@ from network_backend.Batching import SimpleBatcher
 
 net = SequentialNetwork([FullyConnectedNet([103, 100, 100, 50, 50, 10], nonLin=ReLU()),
                          LinearLayer(10, 1)])
-folder = "networks/q_learning_gamma_0_9_ReLU/"
-load_saved_version = True
-offset = 100
+folder = "networks/q_learning/"
+load_saved_version = False
+offset = 0
 
 if load_saved_version:
     list_of_files = glob.glob(folder+"*.net")
@@ -33,11 +33,11 @@ if load_saved_version:
 
 player0 = QNetPlayer(net, 0)
 player1 = QNetPlayer(net, 1)
-memory = ReplayMem(2000, 1, net, gamma=0.9, encode=QEncoding(), goal_value_function=QGoal())
+memory = ReplayMem(2000, 1, net, gamma=0.95, encode=QEncoding(), goal_value_function=QGoal())
 reward = SimpleReward(take_factor=10.0, penalty=0.01, win_reward=100.0)
 game = Game(run=False, p0=player0, p1=player1, mem=memory, reward=reward)
 
-opt = Adam(net, alpha=0.0001, beta_1=0.9, beta_2=0.999, eps=10e-8)
+opt = Adam(net, alpha=0.001, beta_1=0.9, beta_2=0.999, eps=10e-8)
 criterion = L2Loss()
 
 
