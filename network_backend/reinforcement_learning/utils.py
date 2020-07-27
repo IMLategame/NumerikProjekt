@@ -39,3 +39,6 @@ class ReplayMem:
         for data in self.mem:
             string += str(data) + "\n"
         return string
+
+    def get_current_mem(self):
+        return self.mem
