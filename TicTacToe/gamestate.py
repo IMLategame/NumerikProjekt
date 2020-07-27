@@ -94,7 +94,9 @@ class Game:
         if len(self.board.get_rows(self.p0.playerID)) > 0:
             self.p0.win()
             self.winner = self.p0
-            return
-        if len(self.board.get_rows(self.p1.playerID)) > 0:
+        elif len(self.board.get_rows(self.p1.playerID)) > 0:
             self.p1.win()
             self.winner = self.p1
+
+        self.p0.end(self.board)
+        self.p1.end(self.board)
