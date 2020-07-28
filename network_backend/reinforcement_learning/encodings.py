@@ -114,3 +114,16 @@ class TTTQEncoding(EncodingI):
         move_pos[move] = 1.0
         encoding = my_pos + enemy_pos + move_pos
         return np.array(encoding)
+
+
+class TTTVEncoding(EncodingI):
+    @classmethod
+    def call(cls, move, board, phase, playerID):
+        my_pos = [0.0 for _ in range(9)]
+        for pos in board.get_player_pos(playerID):
+            my_pos[pos] = 1.0
+        enemy_pos = [0.0 for _ in range(9)]
+        for pos in board.get_player_pos(1 - playerID):
+            enemy_pos[pos] = 1.0
+        encoding = my_pos + enemy_pos
+        return np.array(encoding)

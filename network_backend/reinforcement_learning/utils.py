@@ -27,6 +27,16 @@ class ReplayMem:
             (self.encode(p[2], p[0], p[1], p[6]), self.goal(self.Q_fctn, self.encode, self.gamma, p[0], p[1], p[2],
                                                             p[3], p[4], p[5], p[6])) for p in self.mem]
 
+    def get_v_data(self):
+        data_list = []
+        # simulate outcome:
+        for prev, phase_p, a, r, post, phase_p, playerID in self.mem:
+            intermed = deepcopy(prev)
+            intermed.do(move=a, player=playerID)
+            data_list.append((self.encode(a, intermed, None, playerID), self.goal(self.Q_fctn, self.encode, self.gamma, prev, phase_p, a, r, post, phase_p, playerID)))
+        return data_list
+
+
     def __len__(self):
         return len(self.mem)
 

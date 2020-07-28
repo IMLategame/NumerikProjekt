@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from network_backend.reinforcement_learning.encodings import EncodingI
 from NineMenMorris.moves import Move
 
@@ -27,7 +29,18 @@ class QGoal(GoalFunctionI):
 
 class VGoal(GoalFunctionI):
     def call(self, net, encoding: EncodingI, gamma, prev, phase_prev, a: Move, r, post, phase_post, turn_player):
-        if post.is_terminal(phase_post, turn_player):
+        if post.is_terminal(phase=phase_post, player=turn_player):
             return r
+        max_v = -2 ** 62
+        legal = post.legal_moves(phase_post, turn_player)
+        if len(legal) == 0:
+            return r
+        for move in legal:
+            after = deepcopy(post)
+            after.do(move, turn_player)
+            v_val = net(encoding(move, after, None, turn_player))[0][0]
+            if v_val > max_v:
+                max_v = v_val
+        return r + gamma * max_v
         # assumption: the action a is the best possible, given the current state of the net (/the state value function)
-        return r + gamma * net(encoding(None, post, phase_post, turn_player))[0][0]
+        return r + gamma * -net(encoding(None, post, phase_post, 1-turn_player))[0][0]
