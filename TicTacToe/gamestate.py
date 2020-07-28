@@ -87,10 +87,10 @@ class Game:
                 input("continue?")
             if self.board.is_terminal(self.p1.playerID):
                 break
+            move = self.get_and_do_move(self.p1)
             if wait_and_show:
                 print(self.board)
                 input("continue?")
-            move = self.get_and_do_move(self.p1)
         if len(self.board.get_rows(self.p0.playerID)) > 0:
             self.p0.win()
             self.winner = self.p0
