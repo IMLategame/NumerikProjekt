@@ -45,9 +45,8 @@ criterion = L2Loss()
 
 batch_size = 30
 epochs = 100000
-start = time.time()
 save_epochs = 100
-evaluation_epochs = 200
+evaluation_epochs = 1000
 evaluation_games = 100
 assert epochs % evaluation_epochs == 0
 eval_set_size = 50
@@ -66,7 +65,7 @@ test_data = test_data[: min([len(test_data), eval_set_size])]
 eval_mem = ReplayMem(2000, 1, net, gamma=0.99, encode=TTTVEncoding(), goal_value_function=VGoal())
 eval_mem.mem = test_data
 print("Got {} set states for evaluation".format(len(test_data)))
-
+start = time.time()
 for epoch in range(epochs):
     epoch += offset
     if epoch % save_epochs == 0:

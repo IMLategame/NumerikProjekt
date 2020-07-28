@@ -64,7 +64,7 @@ test_data = test_data[: min([len(test_data), eval_set_size])]
 eval_mem = ReplayMem(2000, 1, net, gamma=0.99, encode=QEncoding(), goal_value_function=QGoal())
 eval_mem.mem = test_data
 print("Got {} set states for evaluation".format(len(test_data)))
-
+start = time.time()
 for epoch in range(epochs):
     epoch += offset
     if epoch % save_epochs == 0:
