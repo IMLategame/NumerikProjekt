@@ -1,5 +1,6 @@
 from pygame.rect import Rect
 
+from NineMenMorris.SearchAlgorithms import MCTS
 from NineMenMorris.board import Board
 from NineMenMorris.moves import Move
 from network_backend.reinforcement_learning.encodings import QEncoding, VEncoding
@@ -355,3 +356,15 @@ class VisualPlayer(PlayerI):
             for event in pg.event.get():
                 if event.type == pg.QUIT or event.type == pg.MOUSEBUTTONUP:
                     return
+
+
+class MCTSPlayer(PlayerI):
+    def __init__(self, playerID):
+        super(MCTSPlayer, self).__init__(playerID)
+        self.mcts = MCTS()
+
+    def get_move(self, phase, board: Board):
+        return self.mcts(board, phase, self.playerID)
+
+    def win(self):
+        pass
