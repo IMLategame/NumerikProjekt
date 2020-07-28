@@ -208,3 +208,35 @@ class VNetPlayer(NetPlayerI):
 
     def win(self):
         pass
+
+
+# Minimax algorithm:
+def miniMax(board, playerId):
+    if board.is_terminal(playerId):
+        if board.winner is None:
+            return -1, 0.5
+        if board.winner == board.player_map[playerId]:
+            return -1, 1.0
+        return -1, 0.0
+    max_val = -2**62
+    max_action = None
+    for a in board.legal_moves():
+        simulated = deepcopy(board)
+        simulated.do(a, playerId)
+        mv, val = miniMax(simulated, 1-playerId)
+        if 1.0-val > max_val:
+            max_val = 1.0-val
+            max_action = a
+    return max_action, max_val
+
+
+class MiniMaxPlayer(PlayerI):
+    """
+        This player runs a straight min max, expanding all possible future states.
+    """
+    def get_move(self, board: Board):
+        mv, val = miniMax(board, self.playerID)
+        return mv
+
+    def win(self):
+        pass
