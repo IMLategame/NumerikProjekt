@@ -104,6 +104,10 @@ class Board:
         for i in range(9):
             if self[i] != other[i]:
                 return False
+        return True
 
     def __hash__(self):
         return hash((str(self.player_map), str(self.board_state)))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
