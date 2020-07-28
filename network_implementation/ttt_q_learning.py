@@ -25,8 +25,8 @@ from network_backend.Batching import SimpleBatcher
 
 net = FullyConnectedNet([27, 27, 27, 1], nonLin=Tanh())
 folder = "networks/ttt_q_learning_param_study/"
-load_saved_version = False
-offset = 0
+load_saved_version = True
+offset = 100000
 
 if load_saved_version:
     list_of_files = glob.glob(folder+"*.net")
@@ -39,19 +39,19 @@ memory = ReplayMem(10, 1, net, gamma=0.95, encode=TTTQEncoding(), goal_value_fun
 reward = OnlyWinReward(1.0)
 game = Game(run=False, p0=player0, p1=player1, mem=memory, reward=reward)
 
-opt = Adam(net, alpha=0.001, beta_1=0.9, beta_2=0.999, eps=10e-8)
+opt = Adam(net, alpha=0.0001, beta_1=0.9, beta_2=0.999, eps=10e-8)
 criterion = L2Loss()
 
 
 batch_size = 30
-epochs = 100000
+epochs = 200000
 start = time.time()
 save_epochs = 100
 evaluation_epochs = 100
 evaluation_games = 100
 assert epochs % evaluation_epochs == 0
 eval_set_size = 50
-max_learning_epochs_per_play_epoch = 10
+max_learning_epochs_per_play_epoch = 1
 
 fig, ax = plt.subplots(2)
 win_percentages = []

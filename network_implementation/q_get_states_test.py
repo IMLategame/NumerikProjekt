@@ -9,7 +9,7 @@ path = pathlib.Path().absolute()
 sys.path.insert(1, str(path))
 
 from network_backend.Loss import L2Loss
-from network_backend.NonLinear import Tanh, ReLU
+from network_backend.NonLinear import Tanh, ReLU, LeakyReLu
 from network_backend.Optimizers import Adam, SGD
 from NineMenMorris.players import QNetPlayer, RandomPlayer
 from network_backend.reinforcement_learning.utils import ReplayMem
@@ -20,9 +20,8 @@ from network_backend.reinforcement_learning.rewardFunctions import SimpleReward
 from network_backend.reinforcement_learning.goalFunctions import QGoal
 from network_backend.Batching import SimpleBatcher
 
-net = SequentialNetwork([FullyConnectedNet([103, 100, 100, 50, 50, 10], nonLin=ReLU()),
-                         LinearLayer(10, 1)])
-folder = "networks/q_learning/"
+net = FullyConnectedNet([103, 100, 50, 10, 1], nonLin=LeakyReLu(0.1))
+folder = "networks/q_learning_no_penalty/"
 load_saved_version = False
 offset = 0
 
@@ -33,8 +32,8 @@ if load_saved_version:
 
 player0 = QNetPlayer(net, 0)
 player1 = QNetPlayer(net, 1)
-memory = ReplayMem(2000, 1, net, gamma=0.95, encode=QEncoding(), goal_value_function=QGoal())
-reward = SimpleReward(take_factor=10.0, penalty=0.01, win_reward=100.0)
+memory = ReplayMem(1000, 1, net, gamma=0.95, encode=QEncoding(), goal_value_function=QGoal())
+reward = SimpleReward(take_factor=10.0, penalty=0.0, win_reward=100.0)
 game = Game(run=False, p0=player0, p1=player1, mem=memory, reward=reward)
 
 opt = Adam(net, alpha=0.001, beta_1=0.9, beta_2=0.999, eps=10e-8)
@@ -50,7 +49,7 @@ evaluation_epochs = 25
 evaluation_games = 10
 assert epochs % evaluation_epochs == 0
 eval_set_size = 50
-max_learning_epochs_per_play_epoch = 10
+max_learning_epochs_per_play_epoch = 1
 
 fig, ax = plt.subplots(2)
 win_percentages = []
@@ -72,7 +71,7 @@ for epoch in range(epochs):
         with open(folder + "morris_ep_{}.net".format(epoch), "w+") as f:
             net.toFile(f)
     print("Epoch {}".format(epoch))
-    n = game.learn(0.05)
+    n = game.learn(0.05, 500)
     print("\tPlayed for {} steps".format(n))
     batcher = SimpleBatcher(batch_size, memory.get_data())
     test_batcher = batcher.subset_percent(0.1)
