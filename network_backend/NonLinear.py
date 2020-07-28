@@ -13,6 +13,17 @@ class NonLinearI:
     def __call__(self, x):
         return self.call(x)
 
+    def toDict(self):
+        obj = {"name": type(self).__name__}
+        return obj
+
+    @classmethod
+    def fromDict(cls, obj):
+        # for backwards compatibility
+        if isinstance(obj, str):
+            return fctn_dict[obj]()
+        return fctn_dict[obj["name"]]()
+
 
 class Sigmoid(NonLinearI):
     def call(self, x):
@@ -22,14 +33,14 @@ class Sigmoid(NonLinearI):
         return x * (1 - x)
 
 
-def elementWiseReLU(x):
-    return max(x, 0.0)
+def elementWiseReLU(x, alpha=0.0):
+    return max(x, alpha*x)
 
 
-def elementWiseReLUDer(x):
+def elementWiseReLUDer(x, alpha=0.0):
     if x > 0:
         return 1.0
-    return 0.0
+    return alpha
 
 
 class ReLU(NonLinearI):
@@ -42,6 +53,36 @@ class ReLU(NonLinearI):
 
     def d(self, x):
         return self.df(x)
+
+
+class LeakyReLu(NonLinearI):
+    def __init__(self, rate):
+        assert rate != 1.0
+        self.rate = rate
+
+        def func(x):
+            return elementWiseReLU(x, rate)
+        self.f = np.vectorize(func)
+
+        def deriv(x):
+            return elementWiseReLUDer(x, rate)
+        self.df = np.vectorize(deriv)
+
+    def call(self, x):
+        return self.f(x)
+
+    def d(self, x):
+        return self.df(x)
+
+    def toDict(self):
+        obj = super(LeakyReLu, self).toDict()
+        obj["rate"] = self.rate
+
+    @classmethod
+    def fromDict(cls, obj):
+        if "rate" not in obj:
+            obj["rate"] = 0.1
+        return fctn_dict[obj["name"]](obj["rate"])
 
 
 class Identity(NonLinearI):
@@ -73,5 +114,6 @@ fctn_dict = {
     "ReLU": ReLU,
     "Identity": Identity,
     "Tanh": Tanh,
-    "Softmax": Softmax
+    "Softmax": Softmax,
+    "LeakyReLu": LeakyReLu
 }

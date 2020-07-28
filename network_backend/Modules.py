@@ -210,12 +210,12 @@ class NonLinearLayer(ModuleI):
 
     def toDict(self):
         obj = super(NonLinearLayer, self).toDict()
-        obj["non_linearity"] = type(self.nonLin).__name__
+        obj["non_linearity"] = self.nonLin.toDict()
         return obj
 
     @classmethod
     def dict2Mod(cls, obj):
-        return NonLinearLayer(fctn_dict[obj["non_linearity"]]())
+        return NonLinearLayer(NonLinearI.fromDict(obj["non_linearity"]))
 
 
 """class ResidualLayer(ModuleI):
@@ -283,13 +283,13 @@ class SplitNonLinearLayer(ModuleI):
     def toDict(self):
         obj = super(SplitNonLinearLayer, self).toDict()
         obj["sizes"] = self.sizes
-        obj["non_linearities"] = [type(non_lin).__name__ for non_lin in self.non_linearities]
+        obj["non_linearities"] = [non_lin.toDict() for non_lin in self.non_linearities]
         return obj
 
     @classmethod
     def dict2Mod(cls, obj):
         sizes = obj["sizes"]
-        non_lins = [NonLinearLayer(fctn_dict[non_lin]) for non_lin in obj["non_linearities"]]
+        non_lins = [NonLinearI.fromDict(non_lin) for non_lin in obj["non_linearities"]]
         return SplitNonLinearLayer(sizes, non_lins)
 
 
