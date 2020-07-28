@@ -56,7 +56,7 @@ class ReLU(NonLinearI):
 
 
 class LeakyReLu(NonLinearI):
-    def __init__(self, rate):
+    def __init__(self, rate=0.1):
         assert rate != 1.0
         self.rate = rate
 
@@ -77,6 +77,7 @@ class LeakyReLu(NonLinearI):
     def toDict(self):
         obj = super(LeakyReLu, self).toDict()
         obj["rate"] = self.rate
+        return obj
 
     @classmethod
     def fromDict(cls, obj):
