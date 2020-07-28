@@ -1,8 +1,10 @@
+from copy import deepcopy
+
 from TicTacToe.board import Board
 from random import random, sample
 import pygame as pg
 
-from network_backend.reinforcement_learning.encodings import TTTQEncoding
+from network_backend.reinforcement_learning.encodings import TTTQEncoding, TTTVEncoding
 
 
 class PlayerI:
@@ -178,3 +180,31 @@ class VisualPlayer(PlayerI):
             for event in pg.event.get():
                 if event.type == pg.QUIT or event.type == pg.MOUSEBUTTONUP:
                     return
+
+
+class VNetPlayer(NetPlayerI):
+    """
+        This player does deep value iteration.
+        It takes a net: R^18 -> R
+    """
+    def get_move(self, board: Board, eps=0):
+        legal_moves = board.legal_moves()
+        if len(legal_moves) == 0:
+            return None
+        if random() < eps:
+            return sample(legal_moves, 1)[0]
+        max_v = -2 ** 62
+        max_action = None
+        for move in legal_moves:
+            # simulate move:
+            sim_board = deepcopy(board)
+            sim_board.do(move, self.playerID)
+            encoded = TTTVEncoding()(None, sim_board, None, self.playerID)
+            v_val = self.net(encoded)[0][0]
+            if v_val > max_v:
+                max_v = v_val
+                max_action = move
+        return max_action
+
+    def win(self):
+        pass
