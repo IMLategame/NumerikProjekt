@@ -309,6 +309,7 @@ class Board:
                 for r in range(3):
                     if other[r, x, y] != self[r, x, y]:
                         return False
+        return True
 
     def __hash__(self):
         return hash((str(self.player_map), str(self.board_state)))
