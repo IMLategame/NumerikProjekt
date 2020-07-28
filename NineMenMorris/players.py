@@ -256,10 +256,10 @@ class VisualPlayer(PlayerI):
         pg.font.init()
         self.box_size = 50
         self.spacing = 25
-        self.font = pg.font.SysFont("Comic Sanse MS", int(self.box_size * 0.95))
+        self.font = pg.font.SysFont("Comic Sans MS", 45)
         self.screen = pg.display.set_mode((7 * self.box_size + 6 * self.spacing, 7 * self.box_size + 6 * self.spacing))
-        self.x_offset = 7
-        self.y_offset = -9
+        self.x_offset = 8
+        self.y_offset = -7
         self.box_list = []
         pg.display.set_caption("Nine Men Morris")
         pg.mouse.set_visible(True)
@@ -273,37 +273,41 @@ class VisualPlayer(PlayerI):
                     continue
                 for r in range(3):
                     if x == 0:
-                        x_coord = r * (self.box_size + self.spacing)
+                        x_coord = (2 - r) * (self.box_size + self.spacing)
                     elif x == 1:
                         x_coord = 3 * (self.box_size + self.spacing)
                     elif x == 2:
-                        x_coord = (6 - r) * (self.box_size + self.spacing)
+                        x_coord = (4 + r) * (self.box_size + self.spacing)
                     if y == 0:
-                        y_coord = r * (self.box_size + self.spacing)
+                        y_coord = (2 - r) * (self.box_size + self.spacing)
                     elif y == 1:
                         y_coord = 3 * (self.box_size + self.spacing)
                     elif y == 2:
-                        y_coord = (6 - r) * (self.box_size + self.spacing)
+                        y_coord = (4 + r) * (self.box_size + self.spacing)
                     # draw boxes
                     pg.draw.rect(self.screen, LIGHT_GREY, Rect(x_coord, y_coord, self.box_size, self.box_size))
                     # draw text in boxes
                     if board[r, x, y] != board.player_map[-1]:
-                        text = self.font.render(board.string_rep[board[r, x, y]], False, BLACK)
-                        self.screen.blit(text, (x_coord, y_coord))
+                        text = self.font.render(board.string_rep[board[r, x, y]].capitalize(), False, BLACK)
+                        self.screen.blit(text, (x_coord+self.x_offset, y_coord+self.y_offset))
                     self.box_list.append(((x_coord, y_coord), r, x, y))
                     # draw lines to the right
-                    if x < 2:
+                    if (x < 2 or y == 1) and not (r == 0 == x and y == 1):
                         line_start_x_coord = x_coord + self.box_size
                         line_start_y_coord = y_coord + self.box_size / 2.0
-                        line_end_x_coord = line_start_x_coord + (2-r) * (self.box_size + self.spacing) + self.spacing
+                        line_end_x_coord = line_start_x_coord + r * (self.box_size + self.spacing) + self.spacing
+                        if y == 1:
+                            line_end_x_coord = line_start_x_coord + self.spacing
                         line_end_y_coord = line_start_y_coord
                         pg.draw.line(self.screen, BLACK, (line_start_x_coord, line_start_y_coord),
-                                     (line_end_x_coord, line_start_y_coord))
+                                     (line_end_x_coord, line_end_y_coord))
                     # draw lines to the bottom
-                    if y < 2:
+                    if (y < 2 or x == 1) and not (r == 0 == y and x == 1):
                         line_start_x_coord = x_coord + self.box_size / 2.0
                         line_start_y_coord = y_coord + self.box_size
-                        line_end_y_coord = line_start_y_coord + (2-r) * (self.box_size + self.spacing) + self.spacing
+                        line_end_y_coord = line_start_y_coord + r * (self.box_size + self.spacing) + self.spacing
+                        if x == 1:
+                            line_end_y_coord = line_start_y_coord + self.spacing
                         line_end_x_coord = line_start_x_coord
                         pg.draw.line(self.screen, BLACK, (line_start_x_coord, line_start_y_coord),
                                      (line_end_x_coord, line_end_y_coord))
@@ -344,3 +348,10 @@ class VisualPlayer(PlayerI):
                     if click_start_coord is None:
                         continue
                     return Move("move", click_end_coord, click_start_coord)
+
+    def end(self, board: Board):
+        self.draw_board(board)
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT or event.type == pg.MOUSEBUTTONUP:
+                    return
