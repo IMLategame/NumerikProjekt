@@ -25,7 +25,7 @@ class SimpleBatcher:
         for i in range(n):
             batch_x = [p[0] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]
             batch_y = [p[1] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]
-            batched_points.append((np.array(batch_x).T, np.array(batch_y)))
+            batched_points.append((np.array(batch_x).T, np.array(batch_y).T))
         return iter(batched_points)
 
     def subset_percent(self, percent, batch_size=None):
@@ -36,3 +36,24 @@ class SimpleBatcher:
         if batch_size is None:
             batch_size = self.batch_size
         return SimpleBatcher(batch_size, shuffeled_data[: length])
+
+
+class TwoGoalBatcher(SimpleBatcher):
+    def __iter__(self):
+        shuffeled_data = list(self.dataset)
+        while len(shuffeled_data) < self.batch_size:
+            shuffeled_data += shuffeled_data
+        random.shuffle(shuffeled_data)
+        mod = len(shuffeled_data) % self.batch_size
+        if mod != 0:
+            shuffeled_data += shuffeled_data[:self.batch_size - mod]
+            random.shuffle(shuffeled_data)
+        batched_points = []
+        batch_size = self.batch_size
+        n = int(len(shuffeled_data) / batch_size)
+        for i in range(n):
+            batch_x = [p[0] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]
+            batch_y1 = [p[1] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]
+            batch_y2 = [p[2] for p in shuffeled_data[i * batch_size:(i + 1) * batch_size]]
+            batched_points.append((np.array(batch_x).T, np.array(batch_y1).T, np.array(batch_y2).T))
+        return iter(batched_points)
