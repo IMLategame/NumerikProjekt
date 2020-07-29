@@ -55,7 +55,7 @@ class ReLU(NonLinearI):
         return self.df(x)
 
 
-class LeakyReLu(NonLinearI):
+class LeakyReLU(NonLinearI):
     def __init__(self, rate=0.1):
         assert rate != 1.0
         self.rate = rate
@@ -75,7 +75,7 @@ class LeakyReLu(NonLinearI):
         return self.df(x)
 
     def toDict(self):
-        obj = super(LeakyReLu, self).toDict()
+        obj = super(LeakyReLU, self).toDict()
         obj["rate"] = self.rate
         return obj
 
@@ -103,11 +103,15 @@ class Tanh(NonLinearI):
 
 
 class Softmax(NonLinearI):
+    """
+        ONLY USE AS OUTPUT INTO CROSS ENTROPY LOSS
+    """
     def call(self, x):
-        return np.exp(x) / np.sum(np.exp(x), axis=0)
+        exps = np.exp(x - np.max(x))
+        return exps / np.sum(exps, axis=0)
 
     def d(self, x):
-        return x * (1 - x)
+        return np.ones_like(x)
 
 
 fctn_dict = {
@@ -116,5 +120,5 @@ fctn_dict = {
     "Identity": Identity,
     "Tanh": Tanh,
     "Softmax": Softmax,
-    "LeakyReLu": LeakyReLu
+    "LeakyReLu": LeakyReLU
 }
