@@ -313,3 +313,6 @@ class Board:
 
     def __hash__(self):
         return hash((str(self.player_map), str(self.board_state)))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
