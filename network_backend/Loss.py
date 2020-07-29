@@ -16,12 +16,13 @@ class LossI:
 
 class L2Loss(LossI):
     def loss(self, out, labels):
-        outer = 1/2 * np.outer(labels-out, labels-out)
-        return [outer[i][i] for i in range(outer.shape[0])]
+        if len(labels.shape) == 1:
+            labels = labels[:, np.newaxis]
+        outer = 1/2 * (labels-out).T@(labels-out)
+        return np.array([outer[i][i] for i in range(outer.shape[0])])
 
     def d(self, out, labels):
-        outer_prod = np.outer(out - labels, np.ones(labels.shape))
-        return np.array([row[0] for row in outer_prod])[np.newaxis, :]
+        return out-labels
 
 
 class BCELoss(LossI):
@@ -36,14 +37,21 @@ class BCELoss(LossI):
 
 
 class CrossEntropyLoss(LossI):
+    """
+        ONLY USE IF LAST LAYER IS SOFTMAX LAYER
+    """
     def __init__(self, eps=1e-10):
         self.eps = eps
 
     def loss(self, out, labels):
-        return -np.sum(labels * np.log(out), axis=0)
+        if len(labels.shape) == 1:
+            labels = labels[:, np.newaxis]
+        return -np.sum(labels * np.log(out + self.eps), axis=0)
 
     def d(self, out, labels):
-        return -labels/(out + self.eps)
+        if len(labels.shape) == 1:
+            labels = labels[:, np.newaxis]
+        return out-labels
 
 
 class SplitLosses(LossI):
