@@ -1,8 +1,7 @@
 from copy import deepcopy
 from math import sqrt, log, pow
 from random import sample, random
-
-from TicTacToe.board import Board
+from numpy.random import dirichlet
 
 
 def miniMax(board, playerId):
@@ -239,17 +238,22 @@ class GuidedMCTS:
     """
         MCTS algorithm with guiding mechanism.
     """
-    def __init__(self, guide: MCTSGuideI, inv_temp=1/5, c=2, simulations=25):
+    def __init__(self, guide: MCTSGuideI, inv_temp=1/10, c=sqrt(2), simulations=50, alpha=2, eps=0.1):
         self.guide = guide
         self.sum_qs = MCTSActionMemory()
         self.ns = MCTSActionMemory()
         self.inv_temp = inv_temp
         self.c = c
         self.simulations = simulations
+        self.alpha = alpha
+        self.eps = eps
+        self.noise = [len(guide.possible_moves()) for _ in guide.possible_moves()]
 
-    def utility(self, state, player, action):
+    def utility(self, state, player, action, is_root=False):
         sum_q = self.sum_qs[(state, player, action)]
         p = self.guide.distr(state, player, action)
+        if is_root:
+            p = (1 - self.eps) * p + self.eps * self.noise[action]
         assert 0 <= p <= 1
         n = self.ns[(state, player, action)]
         N = 0
@@ -259,7 +263,7 @@ class GuidedMCTS:
             return p * sqrt(N)
         return sum_q / n + self.c * p * sqrt(N) / (1 + n)
 
-    def selection(self, root, player_turn, visited=set()):
+    def selection(self, root, player_turn, visited=set(), is_root=False):
         """
             Selection part
             :param root: node to start selection
@@ -273,7 +277,7 @@ class GuidedMCTS:
         max_state = None
         # select legal move with the maximum utility
         for a in root.legal_moves(player_turn):
-            u = self.utility(root, player_turn, a)
+            u = self.utility(root, player_turn, a, is_root=is_root)
             if u > max_util:
                 simulated = deepcopy(root)
                 simulated.do(a, player_turn)
@@ -300,25 +304,15 @@ class GuidedMCTS:
                 self.ns.expand_into(leaf, player_turn)
                 self.sum_qs.expand_into(leaf, player_turn)
             return None
-        try:
-            self.ns.expand_into(leaf, player_turn)
-            self.sum_qs.expand_into(leaf, player_turn)
-        except:
-            print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-            for board in self.ns.mem_state:
-                print(board)
-            print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-            print(leaf)
-            assert False
-        move = sample(leaf.legal_moves(player_turn), 1)[0]
-        return move
+        self.ns.expand_into(leaf, player_turn)
+        self.sum_qs.expand_into(leaf, player_turn)
 
     def simulation(self, start_node, player_turn):
         """
             Simulation step.
             :param start_node: start point of simulation
             :param player_turn: player whos turn it is at the start
-            :return: winner
+            :return: estimated value of the game
         """
         return self.guide.val(start_node, player_turn)
 
@@ -357,10 +351,11 @@ class GuidedMCTS:
             u -= d[a]
 
     def __call__(self, board, player):
+        # sample noise for the root node
+        self.noise = dirichlet([self.alpha for _ in self.guide.possible_moves()])
         for _ in range(self.simulations):
-            sel_list = self.selection(board, player)
-            expansion_move = self.expansion(sel_list[-1][0], sel_list[-1][1])
-            sel_list[-1][2] = expansion_move
+            sel_list = self.selection(board, player, is_root=True)
+            self.expansion(sel_list[-1][0], sel_list[-1][1])
             val = self.simulation(sel_list[-1][0], sel_list[-1][1])
             self.backpropagation(sel_list, val)
         # sample move from the new distribution
