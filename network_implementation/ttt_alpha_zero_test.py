@@ -158,8 +158,7 @@ for epoch in range(epochs+1):
                     wins += result
             g.p0 = player0
             g.p1 = player1
-            print(wins/(2 * evaluation_games) >= 0.54)
-            if wins/(2 * evaluation_games) >= 0.54:
+            if wins/(2 * evaluation_games) >= 0.55:
                 # use the new one
                 player0.net_val = net_val
                 player0.net_pre = net_pre
