@@ -107,7 +107,10 @@ class Board:
         return True
 
     def __hash__(self):
-        return hash((str(self.player_map), str(self.board_state)))
+        inv_player_map = {self.player_map[0]: 0, self.player_map[-1]: -1, self.player_map[1]: 1}
+        return hash((inv_player_map[self[0]], inv_player_map[self[1]], inv_player_map[self[2]], inv_player_map[self[3]],
+                     inv_player_map[self[4]], inv_player_map[self[5]], inv_player_map[self[6]], inv_player_map[self[7]],
+                     inv_player_map[self[8]]))
 
     def __ne__(self, other):
         return not self.__eq__(other)
