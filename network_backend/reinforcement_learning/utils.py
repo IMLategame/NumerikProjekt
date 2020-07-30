@@ -6,7 +6,6 @@ from network_backend.reinforcement_learning.goalFunctions import GoalFunctionI
 class ReplayMem:
     def __init__(self, capacity, batch_size, Q_fctn, gamma, encode: EncodingI, goal_value_function: GoalFunctionI):
         self.N = capacity
-        self.batch_size = batch_size
         self.Q_fctn = Q_fctn
         self.gamma = gamma
         self.encode = encode
@@ -52,3 +51,26 @@ class ReplayMem:
 
     def get_current_mem(self):
         return self.mem
+
+
+class DataMemory:
+    def __init__(self, num_games):
+        self.num_games = num_games
+        self.data = []
+
+    def add_game_data(self, dataset):
+        if len(self.data) >= self.num_games:
+            self.data = self.data[1:]
+        self.data.append(dataset)
+
+    def get_data(self):
+        dataset = []
+        for game_data in self.data:
+            dataset += game_data
+        return dataset
+
+    def __len__(self):
+        size = 0
+        for game_data in self.data:
+            size += len(game_data)
+        return size
