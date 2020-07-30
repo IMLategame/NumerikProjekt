@@ -1,10 +1,12 @@
 from copy import deepcopy
 
+import numpy as np
+
 from TicTacToe.board import Board
 from random import random, sample
 import pygame as pg
 
-from TicTacToe.SearchAlgorithms import miniMax, MCTS
+from TicTacToe.SearchAlgorithms import miniMax, MCTS, MCTSGuideI, GuidedMCTS
 from network_backend.reinforcement_learning.encodings import TTTQEncoding, TTTVEncoding
 
 
@@ -230,6 +232,78 @@ class MCTSPlayer(PlayerI):
 
     def get_move(self, board: Board):
         return self.mcts(board, self.playerID)
+
+    def win(self):
+        pass
+
+
+class AlphaZeroPlayer(PlayerI, MCTSGuideI):
+    def __init__(self, net_processing, net_val, net_distr, playerID=0):
+        """
+            Implements the AlphaGoZero algorithm for TicTacToe.
+            :param net_processing: R^18 -> R^n
+            :param net_val: R^n -> R output in [-1, 1]
+            :param net_distr: R^n -> R^9 (9 possible moves) output is probability distribution (softmax)
+            :param playerID: this players id
+        """
+        super(AlphaZeroPlayer, self).__init__()
+        self.playerID = playerID
+        self.net_pre = net_processing
+        self.net_val = net_val
+        self.net_distr = net_distr
+        self.encode = TTTVEncoding()
+        self.guidedMCTS = GuidedMCTS(self)
+        self.boards_encountered = set()
+        self.data_wo_vals = []
+        self.dataset = []
+
+    def distr(self, state, player, action=None):
+        encoded = self.encode(None, state, None, player)
+        intermed = self.net_pre(encoded)
+        distribution = self.net_distr(intermed)
+        if action is None:
+            return [distribution[i][0] for i in range(distribution.shape[0])]
+        return distribution[action][0]
+
+    def val(self, state, player):
+        encoded = self.encode(None, state, None, player)
+        intermed = self.net_pre(encoded)
+        value = self.net_val(intermed)[0][0]
+        return value
+
+    def get_move(self, board: Board, again=False):
+        action, distr = self.guidedMCTS(board, self.playerID)
+        if again:
+            print("----------------------------------------------")
+            print(board)
+            print(action, distr)
+            print(self.distr(board, self.playerID))
+        self.data_wo_vals.append((deepcopy(board), distr))
+        return action
+
+    def possible_moves(self):
+        return range(9)
+
+    def end(self, board: Board):
+        self.guidedMCTS.reset()
+        self.dataset = []
+        if board.winner is None:
+            val = 0.0
+        elif board.winner == board.player_map[self.playerID]:
+            val = 1.0
+        else:
+            val = -1.0
+        for b, d in self.data_wo_vals:
+            self.dataset.append((b, d, val))
+        self.data_wo_vals = []
+
+    def get_data(self):
+        data = []
+        for b, d, v in self.dataset:
+            d = [d[p] for p in d]
+            encoded = self.encode(None, b, None, self.playerID)
+            data.append((encoded, np.array(d), [v]))
+        return data
 
     def win(self):
         pass
