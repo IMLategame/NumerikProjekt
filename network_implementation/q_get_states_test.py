@@ -9,7 +9,7 @@ path = pathlib.Path().absolute()
 sys.path.insert(1, str(path))
 
 from network_backend.Loss import L2Loss
-from network_backend.NonLinear import Tanh, ReLU, LeakyReLU
+from network_backend.NonLinear import Tanh, ReLU, LeakyReLU, Sigmoid
 from network_backend.Optimizers import Adam, SGD
 from NineMenMorris.players import QNetPlayer, RandomPlayer
 from network_backend.reinforcement_learning.utils import ReplayMem
@@ -20,11 +20,11 @@ from network_backend.reinforcement_learning.rewardFunctions import SimpleReward
 from network_backend.reinforcement_learning.goalFunctions import QGoal
 from network_backend.Batching import SimpleBatcher
 
-net = FullyConnectedNet([103, 100, 50, 10, 1], nonLin=LeakyReLU(0.1))
-folder = "networks/q_learning_no_penalty/"
+net = SequentialNetwork([FullyConnectedNet([103, 100, 100, 50, 50, 10], nonLin=Sigmoid()),
+                         LinearLayer(10, 1)])
+folder = "networks/q_learning/"
 load_saved_version = True
-offset = 3000
-
+offset = 14600
 if load_saved_version:
     list_of_files = glob.glob(folder+"*.net")
     latest_file = max(list_of_files, key=os.path.getctime)
@@ -32,8 +32,8 @@ if load_saved_version:
 
 player0 = QNetPlayer(net, 0)
 player1 = QNetPlayer(net, 1)
-memory = ReplayMem(1000, 1, net, gamma=0.95, encode=QEncoding(), goal_value_function=QGoal())
-reward = SimpleReward(take_factor=10.0, penalty=0.0, win_reward=100.0)
+memory = ReplayMem(1000, 1, net, gamma=0.9, encode=QEncoding(), goal_value_function=QGoal())
+reward = SimpleReward(take_factor=10.0, penalty=0.01, win_reward=100.0)
 game = Game(run=False, p0=player0, p1=player1, mem=memory, reward=reward)
 
 opt = Adam(net, alpha=0.001, beta_1=0.9, beta_2=0.999, eps=10e-8)
@@ -41,7 +41,7 @@ criterion = L2Loss()
 
 
 batch_size = 30
-epochs = 3000
+epochs = 10000
 plt.axis([0, epochs, 0, 10])
 start = time.time()
 save_epochs = 100
@@ -61,7 +61,7 @@ game.learn(0.1)
 test_data = memory.get_current_mem()
 random.shuffle(test_data)
 test_data = test_data[: min([len(test_data), eval_set_size])]
-eval_mem = ReplayMem(2000, 1, net, gamma=0.99, encode=QEncoding(), goal_value_function=QGoal())
+eval_mem = ReplayMem(1000, 1, net, gamma=0.99, encode=QEncoding(), goal_value_function=QGoal())
 eval_mem.mem = test_data
 print("Got {} set states for evaluation".format(len(test_data)))
 start = time.time()
@@ -71,7 +71,7 @@ for epoch in range(epochs):
         with open(folder + "morris_ep_{}.net".format(epoch), "w+") as f:
             net.toFile(f)
     print("Epoch {}".format(epoch))
-    n = game.learn(0.05, 500)
+    n = game.learn(0.05, max_steps=500)
     print("\tPlayed for {} steps".format(n))
     batcher = SimpleBatcher(batch_size, memory.get_data())
     test_batcher = batcher.subset_percent(0.1)
