@@ -9,7 +9,7 @@ path = pathlib.Path().absolute()
 sys.path.insert(1, str(path))
 
 from network_backend.Loss import L2Loss
-from network_backend.NonLinear import Tanh, ReLU, LeakyReLu
+from network_backend.NonLinear import Tanh, ReLU, LeakyReLU
 from network_backend.Optimizers import Adam, SGD
 from NineMenMorris.players import QNetPlayer, RandomPlayer
 from network_backend.reinforcement_learning.utils import ReplayMem
@@ -20,10 +20,10 @@ from network_backend.reinforcement_learning.rewardFunctions import SimpleReward
 from network_backend.reinforcement_learning.goalFunctions import QGoal
 from network_backend.Batching import SimpleBatcher
 
-net = FullyConnectedNet([103, 100, 50, 10, 1], nonLin=LeakyReLu(0.1))
+net = FullyConnectedNet([103, 100, 50, 10, 1], nonLin=LeakyReLU(0.1))
 folder = "networks/q_learning_no_penalty/"
-load_saved_version = False
-offset = 0
+load_saved_version = True
+offset = 3000
 
 if load_saved_version:
     list_of_files = glob.glob(folder+"*.net")

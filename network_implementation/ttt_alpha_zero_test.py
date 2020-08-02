@@ -24,21 +24,23 @@ from network_backend.reinforcement_learning.rewardFunctions import SimpleReward,
 from network_backend.reinforcement_learning.goalFunctions import QGoal, VGoal
 from network_backend.Batching import SimpleBatcher, TwoGoalBatcher
 
-folder = "networks/ttt_mcts_learning_v2/"
-load_saved_version = False
-offset = 0
+folder = "networks/ttt_mcts_learning_enemy_gets_neg_val/"
+load_saved_version = True
+offset = 1400
 
-net_pre = FullyConnectedNet([18, 20, 20, 20])
-net_val = FullyConnectedNet([20, 1], nonLin=LeakyReLU())
-net_distr = SequentialNetwork([FullyConnectedNet([20, 20], nonLin=LeakyReLU()), FullyConnectedNet([20, 9], nonLin=Softmax())])
+net_pre = FullyConnectedNet([18, 20, 50])
+net_val = FullyConnectedNet([50, 1], nonLin=LeakyReLU())
+net_distr = SequentialNetwork([FullyConnectedNet([50, 50], nonLin=LeakyReLU()), FullyConnectedNet([50, 9], nonLin=Softmax())])
 
 if load_saved_version:
     assert offset != 0
     list_of_files = glob.glob(folder+"*.pre.net")
     latest_file = max(list_of_files, key=os.path.getctime)
+    print("used " + latest_file)
     net_pre = ModuleI.fromFile(latest_file)
     list_of_files = glob.glob(folder + "*.dist.net")
     latest_file = max(list_of_files, key=os.path.getctime)
+    print("used " + latest_file)
     net_distr = ModuleI.fromFile(latest_file)
     list_of_files = glob.glob(folder + "*.val.net")
     latest_file = max(list_of_files, key=os.path.getctime)
@@ -59,19 +61,19 @@ opt_pre = Adam(net_pre)
 opt_val = Adam(net_val)
 opt_distr = Adam(net_distr)
 
-self_play_per_epoch = 100
+self_play_per_epoch = 60
 
-workers = 10
+workers = 12
 
-epochs = 5000
+epochs = 10000
 evaluation_epochs = 100
-evaluation_games = 100
+evaluation_games = 36
 save_epochs = 100
 old_net_pre = None
 old_net_val = None
 old_net_distr = None
 
-fig, ax = plt.subplots(1)
+#fig, ax = plt.subplots(1)
 win_percentages = []
 
 
@@ -107,8 +109,8 @@ for epoch in range(epochs+1):
         with open(folder + "ttt_ep_{}.val.net".format(epoch), "w+") as f:
             net_val.toFile(f)
     print("Epoch {}".format(epoch), end="\r", flush=True)
-    assert evaluation_games % workers == 0
-    N = int(evaluation_games / workers)
+    assert self_play_per_epoch % workers == 0
+    N = int(self_play_per_epoch / workers)
     with Pool(workers) as executor:
         results = executor.map(simulate_games, [game for _ in range(workers)], [N for _ in range(workers)])
         for result in results:
@@ -119,7 +121,7 @@ for epoch in range(epochs+1):
         game.play()
         memory.add_game_data(player1.get_data() + player0.get_data())
     print("")"""
-    batcher = TwoGoalBatcher(30, memory.get_data())
+    batcher = TwoGoalBatcher(100, memory.get_data())
     for x, y_d, y_v in batcher:
         intermed = net_pre(x)
         out_d = net_distr(intermed)
@@ -137,7 +139,7 @@ for epoch in range(epochs+1):
         opt_val.take_step()
         opt_distr.take_step()
     # Evaluation by self play vs older version:
-    """if epoch % evaluation_epochs == 0:
+    if epoch % evaluation_epochs == 0:
         if old_net_pre is not None:
             # now fight
             player0.net_val = old_net_val
@@ -163,7 +165,7 @@ for epoch in range(epochs+1):
                 player0.net_val = net_val
                 player0.net_pre = net_pre
                 player0.net_distr = net_distr
-                print("Using the new net. Win percent was {}".format(wins/(2 * evaluation_games)))
+                print("Using the new net. Win rate was {:.3f}".format(wins/(2 * evaluation_games)))
             else:
                 # keep the old one
                 net_pre = old_net_pre
@@ -172,18 +174,17 @@ for epoch in range(epochs+1):
                 player1.net_val = old_net_val
                 player1.net_distr = old_net_distr
                 player1.net_pre = old_net_pre
-                print("Keeping the old net. Win percent was {}".format(wins/(2 * evaluation_games)))
+                print("Keeping the old net. Win rate was {:.3f}".format(wins/(2 * evaluation_games)))
         # save as the new standard
         old_net_pre = deepcopy(net_pre)
         old_net_distr = deepcopy(net_distr)
-        old_net_val = deepcopy(net_val)"""
-    # print("loss (last_epoch) = {:.6f} + {:.6f} = {:.6f}".format(sum(loss_d)/len(loss_d),
-    #   sum(loss_v)/len(loss_v), sum(loss)/len(loss)), end='\r', flush=True)
+        old_net_val = deepcopy(net_val)
+    print("\t\t\t\t\t loss = {:.6f}".format(sum(loss)/len(loss)), end='\r', flush=True)
 
     # Evaluation and plotting:
     if epoch % evaluation_epochs == 0:
         wins = 0
-        print("Evaluating at Epoch {}: \t".format(epoch), end="\t", flush=True)
+        print("Evaluating at Epoch {}:  \t".format(epoch), end="\t", flush=True)
         g = Game(p0=player0, p1=RandomPlayer(1 - player0.playerID), run=False)
         assert evaluation_games % workers == 0
         N = int(evaluation_games / workers)
@@ -199,11 +200,11 @@ for epoch in range(epochs+1):
         win_percent = wins / (2 * evaluation_games)
         print("Won {:.2f} % of games".format(win_percent*100), end="\n", flush=True)
         win_percentages.append(win_percent)
-        ax.clear()
-        ax.plot(range(len(win_percentages)), win_percentages)
-        ax.set_title("Win %")
-        plt.pause(0.05)
-        plt.draw()
+        #ax.clear()
+        #ax.plot(range(len(win_percentages)), win_percentages)
+        #ax.set_title("Win %")
+        #plt.pause(0.05)
+        #plt.draw()
 end = time.time()
 time_diff = end-start
 print("Trained for \n\t {} s \n \t {} epochs\n \t {} s/epoch".format(time_diff, epoch+1, time_diff/(epoch+1)))
@@ -215,4 +216,4 @@ with open(folder + "ttt.dist.net".format(epoch), "w+") as f:
 with open(folder + "ttt.val.net".format(epoch), "w+") as f:
     net_val.toFile(f)
 
-plt.show()
+#plt.show()
