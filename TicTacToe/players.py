@@ -231,10 +231,14 @@ class MCTSPlayer(PlayerI):
         self.mcts = MCTS()
 
     def get_move(self, board: Board):
-        return self.mcts(board, self.playerID)
+        a, d = self.mcts(board, self.playerID)
+        return a
 
     def win(self):
         pass
+
+    def end(self, board: Board):
+        self.mcts.reset()
 
 
 class AlphaZeroPlayer(PlayerI, MCTSGuideI):
