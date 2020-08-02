@@ -13,28 +13,37 @@ import pygame as pg
 class PlayerI:
     """
         Interface for Players.
-        Subclass this to create a new player (something that plays the NineMenMorris :) )
+        Subclass this to create a new player (something that plays the game :) )
     """
 
     def __init__(self, playerID=0):
-        # Player has an ID that is either 0 or 1
-        if playerID in ["a", "b"]:
-            playerID = {"a": 0, "b": 1}[playerID]
+        """
+            :param playerID: To identify the player. Is either 0 or 1.
+        """
         assert playerID in [0, 1]
         self.playerID = playerID
 
-    # This is the method to implement in 'real' player-classes.
-    # It takes a board and the NineMenMorris-phase and should in the implementation return a legal move.
     def get_move(self, phase, board: Board):
+        """
+            This is the method to implement in 'real' players. It should return a legal move
+            :param phase: Phase of the game: set, move, jump or take
+            :param board: The current board state
+            :return: The move you want to do now
+        """
         assert phase in ["set", "move", "jump", "take"]
         raise NotImplementedError()
 
-    # What the player does when it wins. Can change that in players.
     def win(self):
+        """
+            Called when this player wins a game
+        """
         print("Player {}: I won :)".format(self.playerID))
 
-    # Called when the game has ended.
     def end(self, board: Board):
+        """
+            Called when the game has ended.
+            :param board: The last state of the board
+        """
         pass
 
 
@@ -364,7 +373,11 @@ class MCTSPlayer(PlayerI):
         self.mcts = MCTS()
 
     def get_move(self, phase, board: Board):
-        return self.mcts(board, phase, self.playerID)
+        a, d = self.mcts(board, phase, self.playerID)
+        return a
 
     def win(self):
         pass
+
+    def end(self, board: Board):
+        self.mcts.reset()

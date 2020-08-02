@@ -1,8 +1,11 @@
 from copy import deepcopy
 from math import sqrt, log
-from random import sample
+from random import sample, random
+
+from numpy.random.mtrand import dirichlet
 
 from NineMenMorris.board import Board
+from NineMenMorris.moves import Move
 
 
 def miniMax(board: Board, phase, playerId):
@@ -53,65 +56,124 @@ def phase_and_player_after_sim(phase, move, simulated, playerId):
     return next_phase, next_player
 
 
-class MCTS:
+class MCTSGuideI:
+    def distr(self, state, phase, player, action):
+        raise NotImplementedError()
+
+    def val(self, state, player):
+        raise NotImplementedError()
+
+    def possible_moves(self):
+        raise NotImplementedError()
+
+
+class MCTSActionMemory:
+    def __init__(self, guide: MCTSGuideI):
+        self.mem_state = {}
+        self.guide = guide
+
+    def __setitem__(self, key, value):
+        state, phase, player, action = key
+        self.mem_state[state][phase][player][action] = value
+
+    def __getitem__(self, item):
+        state, phase, player, action = item
+        return self.mem_state[state][phase][player][action]
+
+    def has(self, state, phase, player):
+        if state not in self.mem_state:
+            return False
+        if phase not in self.mem_state[state]:
+            return False
+        if player not in self.mem_state[state][phase][player]:
+            return False
+        return True
+
+    def expand_into(self, state, phase, player):
+        assert not self.has(state, phase, player)
+        cpy = deepcopy(state)
+        self.mem_state[cpy] = {}
+        self.mem_state[cpy][phase] = {}
+        self.mem_state[cpy][phase][player] = {mv: 0.0 for mv in self.guide.possible_moves()}
+        for state in self.mem_state:
+            print(state)
+            print(state not in self.mem_state)
+
+    def reset(self):
+        self.mem_state = {}
+
+    def __str__(self):
+        return str(self.mem_state)
+
+    def sum(self):
+        entries = 0
+        for state in self.mem_state:
+            for player in self.mem_state[state]:
+                entries += sum(self.mem_state[state][player])
+        return entries
+
+
+class GuidedMCTS:
     """
-        Monte-Carlo-Tree-Search
+        MCTS algorithm with guiding mechanism.
     """
-    def __init__(self, c=sqrt(2), simulations=100):
-        self.visit_memory = {}
+    def __init__(self, guide: MCTSGuideI, inv_temp=1/50, c=5, simulations=50, alpha=1.8, eps=0.25):
+        self.guide = guide
+        self.sum_qs = MCTSActionMemory(guide)
+        self.ns = MCTSActionMemory(guide)
+        self.inv_temp = inv_temp
         self.c = c
         self.simulations = simulations
+        self.alpha = alpha
+        self.eps = eps
+        self.noise = [1.0/len(guide.possible_moves()) for _ in guide.possible_moves()]
+        self.move_to_idx = {mv: i for i, mv in enumerate(guide.possible_moves())}
 
-    def children(self, node, phase, player_turn):
-        children = []
-        for a in node.legal_moves(phase, player_turn):
-            simulated = deepcopy(node)
-            simulated.do(a, player_turn)
-            next_phase, next_player = phase_and_player_after_sim(phase, a, simulated, player_turn)
-            if simulated not in self.visit_memory:
-                self.visit_memory[simulated] = {}
-            if next_phase not in self.visit_memory[simulated]:
-                self.visit_memory[simulated][next_phase] = {}
-            if next_player not in self.visit_memory[simulated][next_phase]:
-                self.visit_memory[simulated][next_phase][next_player] = [0, 0]
-            children.append((simulated, next_phase, next_player))
-        return children
+    def utility(self, state, phase, player, action, is_root=False):
+        sum_q = self.sum_qs[(state, phase, player, action)]
+        p = self.guide.distr(state, phase, player, action)
+        if is_root:
+            noise = self.noise[self.move_to_idx[action]]
+            p = (1 - self.eps) * p + self.eps * noise
+        assert 0 <= p <= 1
+        n = self.ns[(state, phase, player, action)]
+        N = 0
+        for a in state.legal_moves(phase, player):
+            N += self.ns[(state, phase, player, a)]
+        if n == 0:
+            return p * sqrt(N)
+        return sum_q / n + self.c * p * sqrt(N) / (1 + n)
 
-    def utility(self, w, n, N):
-        if n <= 0:
-            return 2**62
-        return w/n + self.c * sqrt(log(N, 10)/n)
-
-    def selection(self, root, phase, player_turn):
+    def selection(self, root, root_phase, player_turn, visited=set(), is_root=False):
         """
             Selection part
             :param root: node to start selection
             :param player_turn: current player
             :return: list of selected nodes and players
         """
-        selection_list = [(root, phase, player_turn)]
-        if root.is_terminal(phase, player_turn):
-            return selection_list
-        if root not in self.visit_memory:
-            return selection_list
-        if phase not in self.visit_memory[root]:
-            return selection_list
-        if player_turn not in self.visit_memory[root][phase]:
-            return selection_list
-        _, N = self.visit_memory[root][phase][player_turn]
-        if N == 0:
-            return selection_list
-        max_util = -2**62
+        if not self.ns.has(root, root_phase, player_turn):
+            return [[root, root_phase, player_turn, None]]
+        max_util = -2 ** 62
+        max_action = None
         max_state = None
+        max_phase = None
         max_player = None
-        for child, next_phase, next_player in self.children(root, phase, player_turn):
-            w, n = self.visit_memory[child][next_phase][next_player]
-            u = self.utility(w, n, N)
+        # select legal move with the maximum utility
+        for a in root.legal_moves(root_phase, player_turn):
+            u = self.utility(root, root_phase, player_turn, a, is_root=is_root)
             if u > max_util:
+                simulated = deepcopy(root)
+                simulated.do(a, player_turn)
+                # do not visit the same state twice in order to not get into an endless loop
+                if (simulated, player_turn) in visited:
+                    continue
                 max_util = u
-                max_state = child
-                max_player = next_player
-        return selection_list + self.selection(max_state, next_phase, max_player)
+                max_action = a
+                max_state = simulated
+                max_phase, max_player = phase_and_player_after_sim(root_phase, a, simulated, player_turn)
+        # visited.add((deepcopy(root), player_turn))
+        assert max_state is not None
+        return [[root, root_phase, player_turn, max_action]] + self.selection(max_state, max_phase, max_player, visited)
 
     def expansion(self, leaf, phase, player_turn):
         """
@@ -121,95 +183,128 @@ class MCTS:
             :return: a child of the node or none
         """
         if leaf.is_terminal(phase, player_turn):
-            return None, None, None
-        if leaf not in self.visit_memory:
-            self.visit_memory[deepcopy(leaf)] = {}
-        if phase not in self.visit_memory[leaf]:
-            self.visit_memory[leaf][phase] = {}
-        if player_turn not in self.visit_memory[leaf][phase]:
-            self.visit_memory[leaf][phase][player_turn] = [0, 0]
-        for move in leaf.legal_moves(phase, player_turn):
-            simulated = deepcopy(leaf)
-            simulated.do(move, player_turn)
-            next_phase, next_player = phase_and_player_after_sim(phase, move, simulated, player_turn)
-            if simulated not in self.visit_memory:
-                self.visit_memory[simulated] = {}
-            if next_phase not in self.visit_memory[simulated]:
-                self.visit_memory[simulated][next_phase] = {}
-            if next_player not in self.visit_memory[simulated][next_phase]:
-                self.visit_memory[simulated][next_phase][next_player] = [0, 0]
-        move = sample(leaf.legal_moves(phase, player_turn), 1)[0]
-        simulated = deepcopy(leaf)
-        simulated.do(move, player_turn)
-        next_phase, next_player = phase_and_player_after_sim(phase, move, simulated, player_turn)
-        if simulated not in self.visit_memory:
-            self.visit_memory[simulated] = {}
-        if next_phase not in self.visit_memory[simulated]:
-            self.visit_memory[simulated][next_phase] = {}
-        if next_player not in self.visit_memory[simulated][next_phase]:
-            self.visit_memory[simulated][next_phase][next_player] = [0, 0]
-        return simulated, next_phase, next_player
+            return
+        self.ns.expand_into(leaf, phase, player_turn)
+        self.sum_qs.expand_into(leaf, phase, player_turn)
 
-    def simulation(self, start_node, phase, player_turn):
+    def simulation(self, start_node, start_phase, player_turn):
         """
             Simulation step.
             :param start_node: start point of simulation
             :param player_turn: player whos turn it is at the start
-            :return: winner
+            :return: estimated value of the game
         """
-        player = player_turn
-        phase = phase
-        node = deepcopy(start_node)
-        depth = 0
-        while not node.is_terminal(phase, player):
-            move = sample(node.legal_moves(phase, player), 1)[0]
-            node.do(move, player)
-            phase, player = phase_and_player_after_sim(phase, move, node, player)
-            depth += 1
-            if depth > 1000:
-                return None
-        return node.winner
+        return self.guide.val(start_node, start_phase, player_turn)
 
-    def backpropagation(self, nodes, winner):
-        if winner is None:
-            val = 0.5
-        elif winner == nodes[-1][0].player_map[nodes[-1][2]]:
-            val = 1
-        else:
-            val = 0
-        for node, phase, player in nodes:
-            self.visit_memory[node][phase][player][0] += val
-            self.visit_memory[node][phase][player][1] += 1
+    def backpropagation(self, nodes, value, player_turn):
+        for state, phase, player, move in nodes[:-1]:
+            self.ns[(state, phase, player, move)] += 1
+            if player == player_turn:
+                self.sum_qs[(state, phase, player, move)] += value
+            else:
+                self.sum_qs[(state, phase, player, move)] -= value
+
+    def get_distr(self, board, phase, player):
+        N = 0
+        move_map = {}
+        for move in self.guide.possible_moves():
+            n = pow(self.ns[(board, phase, player, move)], 1/self.inv_temp)
+            move_map[move] = n
+            N += n
+            if move not in board.legal_moves(phase, player):
+                assert n == 0
+        print(move_map)
+        assert N != 0
+        for move in self.guide.possible_moves():
+            move_map[move] *= 1/N
+        return move_map
+
+    def sample(self, d):
+        u = random()
+        for a in d:
+            if d[a] <= 0.0:
+                continue
+            if d[a] > u:
+                return a
+            u -= d[a]
 
     def __call__(self, board, phase, player):
-        if board not in self.visit_memory:
-            self.visit_memory[board] = {}
-        if phase not in self.visit_memory[board]:
-            self.visit_memory[board][phase] = {}
-        if player not in self.visit_memory[board][phase]:
-            self.visit_memory[board][phase][player] = [0, 0]
-        for _ in range(self.simulations):
-            print("GO SIMULATION {}".format(_))
-            sel_list = self.selection(board, phase, player)
-            next_node, next_phase, next_player = self.expansion(sel_list[-1][0], sel_list[-1][1], sel_list[-1][2])
-            if next_node is None:
-                next_node = sel_list[-1][0]
-                next_phase = sel_list[-1][1]
-                next_player = sel_list[-1][2]
-            else:
-                sel_list.append((next_node, next_phase, next_player))
-            winner = self.simulation(next_node, next_phase, next_player)
-            self.backpropagation(sel_list, winner)
-        max_util = -2**62
-        max_a = None
-        _, N = self.visit_memory[board][phase][player]
-        for a in board.legal_moves(phase, player):
-            simulated = deepcopy(board)
-            simulated.do(a, player)
-            next_phase, next_player = phase_and_player_after_sim(phase, a, simulated, player)
-            w, n = self.visit_memory[simulated][next_phase][next_player]
-            u = n
-            if u > max_util:
-                max_util = u
-                max_a = a
-        return max_a
+        # sample noise for the root node
+        self.noise = dirichlet([self.alpha for _ in self.guide.possible_moves()])
+        for _ in range(self.simulations+1):
+            print("Simulation {}".format(_), end="\r", flush=True)
+            sel_list = self.selection(board, phase, player, is_root=True)
+            self.expansion(sel_list[-1][0], sel_list[-1][1], sel_list[-1][2])
+            try:
+                val = self.simulation(sel_list[-1][0], sel_list[-1][1], sel_list[-1][2])
+            except:
+                continue
+            if sel_list[-1][2] != player:
+                val = -val
+            print("BACKPROP", len(sel_list))
+            self.backpropagation(sel_list, val, player)
+        # sample move from the new distribution
+        dist = self.get_distr(board, phase, player)
+        move = self.sample(dist)
+        return move, dist
+
+    def reset(self):
+        self.ns.reset()
+        self.sum_qs.reset()
+
+
+class MCTSGuide(MCTSGuideI):
+    def distr(self, state, phase, player, action):
+        return 1
+
+    def val(self, state, phase, player, already_copied=False):
+        # simulate:
+        if state.is_terminal(phase, player):
+            if state.winner is None:
+                return 0.0
+            if state.winner == state.player_map[player]:
+                return 1.0
+            return -1.0
+        action = sample(state.legal_moves(phase, player), 1)[0]
+        if not already_copied:
+            simulated = deepcopy(state)
+        else:
+            simulated = state
+        simulated.do(action, player)
+        phase_post, player_post = phase_and_player_after_sim(phase, action, simulated, player)
+        return self.val(simulated, phase_post, player_post, already_copied=True)
+
+    def possible_moves(self):
+        moves = []
+        # phase = set:
+        for x in range(3):
+            for y in range(3):
+                if x == 1 == y:
+                    continue
+                for r in range(3):
+                    moves.append(Move("set", (r, x, y)))
+        # phase = move / jump
+        for x in range(3):
+            for y in range(3):
+                if x == 1 == y:
+                    continue
+                for r in range(3):
+                    for x2 in range(3):
+                        for y2 in range(3):
+                            if x2 == 1 == y2:
+                                continue
+                            for r2 in range(3):
+                                moves.append(Move("move", (r, x, y), (r2, x2, y2)))
+        #phase = take
+        for x in range(3):
+            for y in range(3):
+                if x == 1 == y:
+                    continue
+                for r in range(3):
+                    moves.append(Move("take", (r, x, y)))
+        return moves
+
+
+class MCTS(GuidedMCTS):
+    def __init__(self):
+        super(MCTS, self).__init__(MCTSGuide(), simulations=50, inv_temp=1/100, eps=0.0)
