@@ -28,9 +28,9 @@ folder = "networks/ttt_mcts_learning_v2/"
 load_saved_version = False
 offset = 0
 
-net_pre = FullyConnectedNet([18, 20, 30])
-net_val = FullyConnectedNet([30, 1], nonLin=LeakyReLU())
-net_distr = SequentialNetwork([FullyConnectedNet([30, 30], nonLin=LeakyReLU()), FullyConnectedNet([30, 9], nonLin=Softmax())])
+net_pre = FullyConnectedNet([18, 20, 20, 20])
+net_val = FullyConnectedNet([20, 1], nonLin=LeakyReLU())
+net_distr = SequentialNetwork([FullyConnectedNet([20, 20], nonLin=LeakyReLU()), FullyConnectedNet([20, 9], nonLin=Softmax())])
 
 if load_saved_version:
     assert offset != 0
@@ -64,9 +64,9 @@ self_play_per_epoch = 100
 workers = 10
 
 epochs = 5000
-evaluation_epochs = 25
+evaluation_epochs = 100
 evaluation_games = 100
-save_epochs = 10
+save_epochs = 100
 old_net_pre = None
 old_net_val = None
 old_net_distr = None

@@ -4,9 +4,19 @@ import numpy as np
 # interface for loss functions
 class LossI:
     def loss(self, out, labels):
+        """
+            :param out: output of the network
+            :param labels: labels of data
+            :return: loss
+        """
         raise NotImplementedError()
 
     def d(self, out, labels):
+        """
+            :param out: output of the network
+            :param labels: labels of data
+            :return: d_out (loss)
+        """
         raise NotImplementedError()
 
     # return is loss, delta

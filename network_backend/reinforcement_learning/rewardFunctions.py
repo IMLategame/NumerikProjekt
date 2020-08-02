@@ -1,5 +1,12 @@
 class RewardI:
     def call(self, state_prev, state_post, phase_prev, player):
+        """
+            :param state_prev: previous state of the board
+            :param state_post: following state of the board
+            :param phase_prev: previous phase
+            :param player: current players ID
+            :return: reward
+        """
         raise NotImplementedError()
 
     def __call__(self, state_prev, state_post, phase_prev, player):

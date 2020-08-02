@@ -6,6 +6,19 @@ from NineMenMorris.moves import Move
 
 class GoalFunctionI:
     def call(self, net, encoding: EncodingI, gamma, prev, phase_prev, a: Move, r, post, phase_post, turn_player):
+        """
+            :param net: current iteration of the network
+            :param encoding: encoding for the state
+            :param gamma: exponential discount
+            :param prev: previous board state
+            :param phase_prev: previous phase
+            :param a: action
+            :param r: reward
+            :param post: following board state
+            :param phase_post: following phase
+            :param turn_player: current players ID
+            :return: estimated ground truth given the current iteration of the network
+        """
         raise NotImplementedError()
 
     def __call__(self, net, encoding: EncodingI, gamma, prev, phase_prev, a: Move, r, post, phase_post, turn_player):

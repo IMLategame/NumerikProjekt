@@ -4,6 +4,13 @@ import numpy as np
 class EncodingI:
     @classmethod
     def call(cls, move, board, phase, playerID):
+        """
+            :param move: action
+            :param board: board state
+            :param phase: phase
+            :param playerID: current player ID
+            :return: encoding of the parameters into a vector
+        """
         raise NotImplementedError()
 
     def __call__(self, move, board, phase, playerID):

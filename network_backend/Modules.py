@@ -1,5 +1,5 @@
 import numpy as np
-from network_backend.NonLinear import Sigmoid, NonLinearI, fctn_dict, Identity
+from network_backend.NonLinear import Sigmoid, ActivationI, fctn_dict, Identity
 import json
 
 
@@ -50,38 +50,64 @@ class ModuleI:
     def toString(self):
         return json.dumps(self.toDict())
 
-    # x.shape(batch_size, ...)
     def feed_forward(self, x):
+        """
+            :param x: input: shape = (input size, batch size)
+            :return: output: shape = (output size, batch size)
+        """
         raise NotImplementedError()
 
-    # delta_out -> delta_in, [gradients]
     def backprop(self, delta_out):
+        """
+            Do backpropagatiion for the last input and save the gradients.
+            :param delta_out: change in output
+            :return: delta_in: corresponding change in input
+        """
         raise NotImplementedError()
 
-    # weights -= delta
     def update(self, delta):
+        """
+            parameters -= delta
+            :param delta: differences
+        """
         raise NotImplementedError()
 
-    # len([gradients])
     def noFeatures(self):
+        """
+            :return: number of elements of the gradient list: len(self.getGradients())
+        """
         raise NotImplementedError()
 
-    # can use self.mode_train in layers. Needed for Dropout, etc.
     def set_mode(self, mode):
+        """
+            Set the current mode of evaluation. Needed for Dropout, etc.
+            :param mode: train or test
+        """
         if mode in ['train', 'Train']:
             self.mode_train = True
         elif mode in ['test', 'Test', 'eval', 'Eval']:
             self.mode_train = False
 
     def getGradients(self):
+        """
+            :return: Gradients for the last run of backpropagation.
+        """
         raise NotImplementedError()
 
     def toDict(self):
+        """
+            :return: The module as a python dictionary. For saving and restoring.
+        """
         obj = {"class_name": type(self).__name__}
         return obj
 
     @classmethod
     def dict2Mod(cls, obj):
+        """
+            Resore the module from a python dictionary.
+            :param obj: dictionary
+            :return: module
+        """
         raise NotImplementedError()
 
 
@@ -189,7 +215,7 @@ class LinearLayer(ModuleI):
 class NonLinearLayer(ModuleI):
     def __init__(self, non_linearity):
         super().__init__()
-        assert isinstance(non_linearity, NonLinearI)
+        assert isinstance(non_linearity, ActivationI)
         self.nonLin = non_linearity
 
     def feed_forward(self, x):
@@ -215,7 +241,7 @@ class NonLinearLayer(ModuleI):
 
     @classmethod
     def dict2Mod(cls, obj):
-        return NonLinearLayer(NonLinearI.fromDict(obj["non_linearity"]))
+        return NonLinearLayer(ActivationI.fromDict(obj["non_linearity"]))
 
 
 """class ResidualLayer(ModuleI):
@@ -257,7 +283,7 @@ class SplitNonLinearLayer(ModuleI):
         assert len(sizes) >= 1
         assert len(sizes) == len(non_linearities)
         for non_lin in non_linearities:
-            assert isinstance(non_lin, NonLinearI)
+            assert isinstance(non_lin, ActivationI)
 
     def feed_forward(self, x):
         assert x.shape[0] == sum(self.sizes)
@@ -289,7 +315,7 @@ class SplitNonLinearLayer(ModuleI):
     @classmethod
     def dict2Mod(cls, obj):
         sizes = obj["sizes"]
-        non_lins = [NonLinearI.fromDict(non_lin) for non_lin in obj["non_linearities"]]
+        non_lins = [ActivationI.fromDict(non_lin) for non_lin in obj["non_linearities"]]
         return SplitNonLinearLayer(sizes, non_lins)
 
 

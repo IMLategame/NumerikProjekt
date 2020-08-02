@@ -3,13 +3,17 @@ import numpy as np
 
 
 class OptimizerI:
-    # call super(subclass, self).__init__(net) in subclasses
     def __init__(self, net):
+        """
+            :param net: neural network to be optimized
+        """
         assert isinstance(net, ModuleI)
         self.net = net
 
-    # take one step towards optimum based on previous backpropagation
     def take_step(self):
+        """
+            Take one step towards the optimum based on previous backpropagation
+        """
         raise NotImplementedError()
 
 

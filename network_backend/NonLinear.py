@@ -1,13 +1,19 @@
 import numpy as np
 
 
-class NonLinearI:
+class ActivationI:
     def call(self, x):
+        """
+            :param x: x
+            :return: f(x)
+        """
         raise NotImplementedError()
 
-    # Watch out. This is NOT the derivative, but the derivative after applying the function:
-    # d = f' o f^-1
-    def d(self, x):
+    def d(self, y):
+        """
+            :param y: y = f(x)
+            :return: f'(x)
+        """
         raise NotImplementedError()
 
     def __call__(self, x):
@@ -25,7 +31,7 @@ class NonLinearI:
         return fctn_dict[obj["name"]]()
 
 
-class Sigmoid(NonLinearI):
+class Sigmoid(ActivationI):
     def call(self, x):
         return 1/(1 + np.exp(-x))
 
@@ -43,7 +49,7 @@ def elementWiseReLUDer(x, alpha=0.0):
     return alpha
 
 
-class ReLU(NonLinearI):
+class ReLU(ActivationI):
     def __init__(self):
         self.f = np.vectorize(elementWiseReLU)
         self.df = np.vectorize(elementWiseReLUDer)
@@ -55,7 +61,7 @@ class ReLU(NonLinearI):
         return self.df(x)
 
 
-class LeakyReLU(NonLinearI):
+class LeakyReLU(ActivationI):
     def __init__(self, rate=0.1):
         assert rate != 1.0
         self.rate = rate
@@ -86,7 +92,7 @@ class LeakyReLU(NonLinearI):
         return fctn_dict[obj["name"]](obj["rate"])
 
 
-class Identity(NonLinearI):
+class Identity(ActivationI):
     def call(self, x):
         return x
 
@@ -94,7 +100,7 @@ class Identity(NonLinearI):
         return np.ones_like(x)
 
 
-class Tanh(NonLinearI):
+class Tanh(ActivationI):
     def call(self, x):
         return np.tanh(x)
         
@@ -102,7 +108,7 @@ class Tanh(NonLinearI):
         return 1-x*x
 
 
-class Softmax(NonLinearI):
+class Softmax(ActivationI):
     """
         ONLY USE AS OUTPUT INTO CROSS ENTROPY LOSS
     """
@@ -120,5 +126,6 @@ fctn_dict = {
     "Identity": Identity,
     "Tanh": Tanh,
     "Softmax": Softmax,
+    "LeakyReLU": LeakyReLU,
     "LeakyReLu": LeakyReLU
 }
