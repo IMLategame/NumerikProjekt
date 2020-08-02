@@ -8,7 +8,7 @@ from network_backend.reinforcement_learning.rewardFunctions import RewardI
 class Game:
     """
         Class for the NineMenMorris logic.
-        Specify the players and if you want to start the NineMenMorris immediately.
+        Specify the players and if you want to start the game immediately.
     """
     def __init__(self, run=True, p0=CmdPlayer(0), p1=CmdPlayer(1), mem: ReplayMem = None, reward: RewardI = None):
         self.p0 = p0

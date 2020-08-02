@@ -22,3 +22,6 @@ class Move:
         if self.type == "move":
             return hash((self.type, self.start, self.end))
         return hash((self.type, self.end))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
