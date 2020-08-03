@@ -1,0 +1,18 @@
+import glob
+import os
+import pathlib, sys
+
+path = pathlib.Path().absolute()
+sys.path.insert(1, str(path))
+
+from NineMenMorris.players import QNetPlayer, CmdPlayer, VisualPlayer, MCTSPlayer
+from NineMenMorris.gamestate import Game
+from network_backend.Modules import ModuleI
+
+file = "networks/morris_q_final.net"
+print("using version "+file)
+net = ModuleI.fromFile(file)
+player0 = QNetPlayer(net, 0)
+player1 = VisualPlayer(1)
+game = Game(p1=player0, p0=player1, run=False)
+game.play(wait_and_show=False)
